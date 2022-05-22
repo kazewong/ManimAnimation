@@ -21,19 +21,19 @@ class OrbitingBinary(ThreeDScene):
     def construct(self):
         axes = ThreeDAxes()
         self.setup()
-        self.add(Binary())
-        self.add(Binary().shift(3 * DOWN))
-        self.wait(10)
+        self.add(Binary((0,0,0)))
+        self.add(Binary((0,0,1)))
+        self.wait(2)
         
     def setup(self):
         self.set_camera_orientation(phi=75 * DEGREES, theta=30 * DEGREES)
 
 class Binary(VGroup):
-    def __init__(self):
+    def __init__(self,center):
         super().__init__()
         self.dot1 = Dot3D()
         self.dot2 = Dot3D()
-        self.orbit = Circle(radius=2).rotate(PI/8,axis=LEFT)
+        self.orbit = Circle(radius=1).rotate(PI/8,axis=LEFT).move_to(center)
         self.dot1_dt = 0.
         self.dot2_dt = 0.5
         self.path1 = VMobject()
