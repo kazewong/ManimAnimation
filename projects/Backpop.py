@@ -15,51 +15,51 @@ class DefaultTemplate(Scene):
         self.play(Transform(square, circle))  # interpolate the square into the circle
         self.play(FadeOut(square))  # fade out animation
 
-
-
 class OrbitingBinary(ThreeDScene):
     def construct(self):
         axes = ThreeDAxes()
-        self.setup()
-        self.add(Binary((0,0,0)))
-        self.add(Binary((0,0,1)))
-        self.wait(2)
+        # self.play(Create(BinaryToRemnent(),lag_ratio=3,run_time=3))
+        for i in np.linspace(0,1,3):
+            color_local = color.interpolate_color(color.RED,color.BLUE,i)
+            binary = Binary(radius = 0.2,center = np.array([0,i,0]),rate=0.5,trail_length=0).set_color(color_local)
+            self.add(binary)
+
+        self.wait(1)
         
-    def setup(self):
-        self.set_camera_orientation(phi=75 * DEGREES, theta=30 * DEGREES)
 
 class Binary(VGroup):
-    def __init__(self,center):
+    def __init__(self,radius=0.2,center: np.array=np.array([0,0,0]),rate = 0.1, period = 1,trail_length = 0,final_center = None):
         super().__init__()
+        self.center = center
         self.dot1 = Dot3D()
         self.dot2 = Dot3D()
-        self.orbit = Circle(radius=1).rotate(PI/8,axis=LEFT).move_to(center)
+        self.orbit = Circle(radius=radius).rotate(PI/8,axis=LEFT).move_to(center)
         self.dot1_dt = 0.
         self.dot2_dt = 0.5
         self.path1 = VMobject()
-
         self.path2 = VMobject()
 
         def dot1_updater(mob, dt):
-            self.dot1_dt += dt * 0.1
-            self.dot1_dt = self.dot1_dt % 1
+            self.orbit.move_to(self.center)
+            self.dot1_dt += dt * rate
+            self.dot1_dt = self.dot1_dt % period
             mob.move_to(self.orbit.point_from_proportion(self.dot1_dt))
 
         def dot2_updater(mob, dt):
-            self.dot2_dt += dt * 0.1
-            self.dot2_dt = self.dot2_dt % 1
+            self.dot2_dt += dt * rate
+            self.dot2_dt = self.dot2_dt % period
             mob.move_to(self.orbit.point_from_proportion(self.dot2_dt))
 
         def path1_updater(path):
             previous_path = path.copy()
             previous_path.add_points_as_corners([self.dot1.get_center()])
-            previous_path.points = previous_path.points[-50:]
+            previous_path.points = previous_path.points[-trail_length:]
             path.become(previous_path)
 
         def path2_updater(path):
             previous_path = path.copy()
             previous_path.add_points_as_corners([self.dot2.get_center()])
-            previous_path.points = previous_path.points[-50:]
+            previous_path.points = previous_path.points[-trail_length:]
             path.become(previous_path)
 
         self.dot1.move_to(self.orbit.point_from_proportion(self.dot1_dt))
@@ -73,5 +73,12 @@ class Binary(VGroup):
 
         self.add(self.dot1,self.dot2,self.path1,self.path2)
         
+class BinaryToRemnent(VGroup):
+    def __init__(self):
+        self.binary_start = Binary(radius=0.2,center=np.array([0,0,0]),rate=0.1,period=1,trail_length=0)
+        self.binary_end = Binary(radius=0.2,center=np.array([2,0,0]),rate=0.1,period=1,trail_length=0)
 
-    
+    @override_animation(Create)
+    def _create(self,**kwargs):
+        return AnimationGroup(Create(self.binary_start),Create(self.binary_end),lag_ratio=1)
+
