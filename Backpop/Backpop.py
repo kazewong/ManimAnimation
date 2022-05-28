@@ -41,11 +41,12 @@ class OrbitingBinary(ThreeDScene):
 
         # Evolve binaries        
         AnimationList = []
+        text_simulation = Tex("Evolve",font_size=40).scale(1.5).shift(2.5*UP)
         for i in range(n_binary-1,-1,-1):
             AnimationList.append(FadeOut(arrowList[i],shift=RIGHT,scale=0))
             AnimationList.append(Transform(binaryList[i],remnentList[i]))
-        self.play(AnimationGroup(*[GrowArrow(arrowList[i]) for i in range(n_binary-1,-1,-1)],lag_ratio=0.2))
-        self.play(AnimationGroup(*AnimationList,lag_ratio=0.2))
+        self.play(AnimationGroup(*[GrowArrow(arrowList[i]) for i in range(n_binary-1,-1,-1)],lag_ratio=0.2),Create(text_simulation))
+        self.play(Uncreate(text_simulation),AnimationGroup(*AnimationList,lag_ratio=0.2))
 
 
 
