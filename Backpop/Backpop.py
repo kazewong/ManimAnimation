@@ -8,6 +8,7 @@ from manim import *
 class OrbitingBinary(ThreeDScene):
     def construct(self):
 
+        # Prepare objects
         def powerLaw(x):
             output = -2*x+10
             return output
@@ -21,27 +22,30 @@ class OrbitingBinary(ThreeDScene):
             remnentList.append(Binary(radius=0, center = np.array([2,i-2.5,0]), trail_length=1).set_color(interpolate_color(RED, BLUE, i/4)))
             arrowList.append(Arrow(binaryList[i].center, remnentList[i],buff=1).set_color(interpolate_color(RED, BLUE, i/4)))
 
-        # self.add(self.distribution)
+        # Create initial distribution and rotate it
+
         self.play(Create(self.distribution))
         self.wait(0.5)
         self.play(Transform(self.distribution, self.distribution.copy().rotate(PI/2).scale(0.25).shift(3*LEFT)))
+
+        # Sample binaries from the distribution
         graph_points = self.distribution.graph.get_all_points()
         self.play(*[GrowFromPoint(binaryList[i], graph_points[np.linspace(0,graph_points.shape[0]-1,n_binary).astype(int)][i]) for i in range(n_binary)])
+
+        # Rotate binaries
         for i in range(n_binary):
             binaryList[i].trail_length = 60
-        # aniGroup = AnimationGroup(Rotate(binaryList[0]),lag_ratio=1)
-        self.play(AnimationGroup(*[Rotate(binaryList[i]) for i in range(n_binary)]),run_time=3)
+        self.play(AnimationGroup(*[Rotate(binaryList[i]) for i in range(n_binary)]),run_time=2)
         for i in range(n_binary):
             binaryList[i].trail_length = 1
-        
+
+        # Evolve binaries        
         AnimationList = []
         for i in range(n_binary-1,-1,-1):
             AnimationList.append(FadeOut(arrowList[i],shift=RIGHT,scale=0))
             AnimationList.append(Transform(binaryList[i],remnentList[i]))
         self.play(AnimationGroup(*[GrowArrow(arrowList[i]) for i in range(n_binary-1,-1,-1)],lag_ratio=0.2))
         self.play(AnimationGroup(*AnimationList,lag_ratio=0.2))
-        # self.play(AnimationGroup(*[FadeOut(arrowList[i],shift=RIGHT,scale=0) for i in range(n_binary-1,-1,-1)],lag_ratio=0.2),run_time=1)
-        # self.play(AnimationGroup(*[Transform(binaryList[i],remnentList[i]) for i in range(n_binary-1,-1,-1)],lag_ratio=0.2))
 
 
 
@@ -86,9 +90,6 @@ class Binary(VGroup):
         dot2_rotate = Rotate(self.dot2,angle=6*PI,about_point=self.get_center(),rate_func=linear,)        
         return AnimationGroup(dot1_rotate,dot2_rotate)
 
-    
-
-        
 
 class Distribution(VGroup):
     def __init__(self, function):
