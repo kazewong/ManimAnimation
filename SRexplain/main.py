@@ -30,8 +30,8 @@ def populate_graph(graph, equation, mother, labels, counter):
         labels[type_name] = type(equation).__name__
         graph.add_node(type_name)
         graph.add_edge(type_name, mother)
-        graph, labels, counter = populate_graph(graph, equation.args[0], type_name, labels, counter)
         graph, labels, counter = populate_graph(graph, equation.args[1], type_name, labels, counter)
+        graph, labels, counter = populate_graph(graph, equation.args[0], type_name, labels, counter)
         return graph, labels, counter
     else:
         counter+=1
@@ -53,7 +53,7 @@ def get_graph(equation):
     edge_list = list(G.edges)
     node_list.remove('ROOT')
     edge_list.remove(('ROOT', root))
-    graph = Graph(node_list, edge_list, layout="tree", root_vertex=root, labels=labels)
+    graph = Graph(node_list, edge_list, layout="tree", root_vertex=root, labels=labels, layout_config={'vertex_spacing':(1.5,1.5)},vertex_config={'radius':0.5})
     return graph
     
 
