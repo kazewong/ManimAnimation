@@ -52,7 +52,7 @@ def get_orientation_vector(alpha, sindelta, cosiota, psi, full_output=False):
     wy = np.cross(k, wx)
     L = np.dot(rotation_matrix(np.arccos(cosiota), wy), k)
     if full_output:
-        return L, west, wx/np.linalg.norm(wx), wy/np.linalg.norm(wy)
+        return L, west, wx/np.linalg.norm(wx), wy/np.linalg.norm(wy), k
     else:
         return L
 
@@ -61,11 +61,12 @@ def plot_waveframe(alpha, sindelta, cosiota, psi):
     north = np.array([0, 0, 1])
     n = get_location_vector(alpha, sindelta)
     k = -n
-    L, west, wx, wy = get_orientation_vector(alpha, sindelta, cosiota, psi, full_output=True)
+    L, west, wx, wy, k = get_orientation_vector(alpha, sindelta, cosiota, psi, full_output=True)
 
-alpha = 0#pi/4
-sindelta = np.sin(np.pi/4)
-cosiota = np.cos(np.pi/4)
-psi = np.pi/4
 
-L, west, wx, wy = get_orientation_vector(alpha, sindelta, cosiota, psi, full_output=True)
+# alpha = 0#pi/4
+# sindelta = np.sin(np.pi/4)
+# cosiota = np.cos(np.pi/4)
+# psi = np.pi/4
+
+# L, west, wx, wy, k = get_orientation_vector(alpha, sindelta, cosiota, psi, full_output=True)
