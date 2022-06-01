@@ -5,7 +5,7 @@ from telnetlib import DO
 from turtle import circle
 from manim import *
 
-class OrbitingBinary(ThreeDScene):
+class ForwardModel(ThreeDScene):
     def construct(self):
 
         # Prepare objects
@@ -13,6 +13,7 @@ class OrbitingBinary(ThreeDScene):
             output = -2*x+10
             return output
         self.distribution = Distribution(powerLaw)
+        self.distribution_obs = Distribution(powerLaw).rotate(-PI/2).scale(0.25).shift(5*RIGHT)
         binaryList = []
         remnentList = []
         arrowList = []
@@ -47,10 +48,11 @@ class OrbitingBinary(ThreeDScene):
             AnimationList.append(Transform(binaryList[i],remnentList[i]))
         self.play(AnimationGroup(*[GrowArrow(arrowList[i]) for i in range(n_binary-1,-1,-1)],lag_ratio=0.2),Create(text_simulation))
         self.play(Uncreate(text_simulation),AnimationGroup(*AnimationList,lag_ratio=0.2))
+        self.play(AnimationGroup(*[FadeOut(binaryList[i],shift=RIGHT,scale=0) for i in range(n_binary-1,-1,-1)]),FadeIn(self.distribution_obs))
 
 
 
-        
+
 
 class Binary(VGroup):
     def __init__(self,radius=0.2,center: np.array=np.array([0,0,0]),trail_length = 0,final_center = None):
@@ -106,3 +108,4 @@ class Distribution(VGroup):
     @override_animation(Create)
     def _create(self,**kwargs):
         return AnimationGroup(Create(self.axes),Create(self.graph),Create(self.grid_labels),lag_ratio=0.5)
+
