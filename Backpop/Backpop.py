@@ -13,7 +13,7 @@ class ForwardModel(ThreeDScene):
             output = -2*x+10
             return output
         self.distribution = Distribution(powerLaw)
-        self.distribution_obs = Distribution(powerLaw).rotate(-PI/2).scale(0.25).shift(5*RIGHT)
+        self.distribution_obs = Distribution(powerLaw).rotate(-PI/2).scale(0.5).shift(5*RIGHT)
         binaryList = []
         remnentList = []
         arrowList = []
@@ -27,7 +27,7 @@ class ForwardModel(ThreeDScene):
 
         self.play(Create(self.distribution))
         self.wait(0.5)
-        self.play(Transform(self.distribution, self.distribution.copy().rotate(PI/2).scale(0.25).shift(3*LEFT)))
+        self.play(Transform(self.distribution, self.distribution.copy().rotate(PI/2).scale(0.5).shift(5*LEFT)))
 
         # Sample binaries from the distribution
         graph_points = self.distribution.graph.get_all_points()
@@ -49,6 +49,8 @@ class ForwardModel(ThreeDScene):
         self.play(AnimationGroup(*[GrowArrow(arrowList[i]) for i in range(n_binary-1,-1,-1)],lag_ratio=0.2),Create(text_simulation))
         self.play(Uncreate(text_simulation),AnimationGroup(*AnimationList,lag_ratio=0.2))
         self.play(AnimationGroup(*[FadeOut(binaryList[i],shift=RIGHT,scale=0) for i in range(n_binary-1,-1,-1)]),FadeIn(self.distribution_obs))
+        self.play(FadeOut(self.distribution),Transform(self.distribution_obs, self.distribution_obs.copy().rotate(PI/2).scale(2).shift(5*LEFT)))
+        self.wait(0.5)
 
 
 
