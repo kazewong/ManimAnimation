@@ -4,14 +4,24 @@ from nturl2path import pathname2url
 from telnetlib import DO
 from turtle import circle
 from manim import *
+from scipy.interpolate import interp1d
+import numpy as np
 
-class ForwardModel(ThreeDScene):
+def powerLaw(x):
+    output = -2*x+10
+    return output
+
+GWTC3_m1_data = np.load('/home/kaze/Work/ManimAnimation/Backpop/GWTC3_m1_pp.npz')
+axis = GWTC3_m1_data['axis']
+median = GWTC3_m1_data['pm1_med']
+low = GWTC3_m1_data['pm1_low']
+high = GWTC3_m1_data['pm1_high']
+
+class ForwardModel(Scene):
     def construct(self):
 
         # Prepare objects
-        def powerLaw(x):
-            output = -2*x+10
-            return output
+
         self.distribution = Distribution(powerLaw)
         self.distribution_obs = Distribution(powerLaw).rotate(-PI/2).scale(0.5).shift(5*RIGHT)
         binaryList = []
@@ -52,7 +62,9 @@ class ForwardModel(ThreeDScene):
         self.play(FadeOut(self.distribution),Transform(self.distribution_obs, self.distribution_obs.copy().rotate(PI/2).scale(2).shift(5*LEFT)))
         self.wait(0.5)
 
-
+class CompareDistribution(Scene):
+    def construct(self):
+        self.distribution_obs = Distribution(powerLaw).rotate(-PI/2).scale(0.5).shift(5*RIGHT)
 
 
 
