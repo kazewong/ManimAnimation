@@ -77,8 +77,7 @@ class ForwardModel(Scene):
         for i in range(n_binary-1,-1,-1):
             AnimationList.append(FadeOut(arrowList[i],shift=RIGHT,scale=0))
             AnimationList.append(Transform(binaryList[i],remnentList[i]))
-        self.play(Create(text_simulation))
-        self.play(Create(text_function))
+        self.play(AnimationGroup(*[Create(text_simulation),Create(text_function)],lag_ratio=0.5),run_time=0.5)
 
         self.play(AnimationGroup(*[GrowArrow(arrowList[i]) for i in range(n_binary-1,-1,-1)],lag_ratio=0.2))
         self.play(Uncreate(text_simulation),Uncreate(text_function),AnimationGroup(*AnimationList,lag_ratio=0.2))
