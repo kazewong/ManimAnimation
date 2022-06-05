@@ -127,14 +127,15 @@ class BackPop(Scene):
             for j in range(3):
                 arrowList.append(Arrow (remnentList[i],binaryList[3*i+j].center,buff=0.1).set_color([remnentList[i].get_color(),binaryList[3*i+j].get_color()]))
 
+
+
+
         self.distribution = Distribution(interp_count,label=r'm_{1,\rm{pro}}').rotate(PI/2).scale(0.5).shift(5*LEFT)
         self.distribution_median = Distribution(interp_median,color=BLUE)
         low = self.distribution_median.axes.plot(interp_low, x_range=np.array([0,5,0.01]))
         high = self.distribution_median.axes.plot(interp_high, x_range=np.array([0,5,0.01]))
         area = self.distribution_median.axes.get_area(graph=low, x_range=[0,5], bounded_graph=high)
         group = VGroup(area,self.distribution_median)
-        # self.add(group)
-        # self.add(VGroup(*arrowList),VGroup(*binaryList),VGroup(*remnentList))
         self.wait(0.5)
         self.play(Transform(group, group .copy().rotate(-PI/2).scale(0.5).shift(5*RIGHT) ))
 
@@ -147,6 +148,21 @@ class BackPop(Scene):
                 AnimationList.append(GrowArrow(arrowList[i+3*(n_binary-j-1)]))
                 AnimationList.append(FadeIn(binaryList[i+3*j]))
         self.play(AnimationGroup(*AnimationList[:(n_binary*2)],lag_ratio=0.2))
+
+        text_function = Tex(r"$f^{-1}(f(m_{1,1};\alpha_1))$",font_size=40).scale(1).shift(3.5*UP)
+        indicate_arrow = Arrow(text_function.get_center(),arrowList[8].get_center(),buff=0.3)
+        self.play(Write(text_function),GrowArrow(indicate_arrow),run_time=0.5)
+        self.wait(0.5)
+        new_text =  Tex(r"$f^{-1}(f(m_{1,2};\alpha_2))$",font_size=40).scale(1).shift(3.5*UP)
+        new_indicate_arrow = Arrow(text_function.get_center(),arrowList[7].get_center(),buff=0.3)
+        self.play(Transform(text_function, new_text),Transform(indicate_arrow, new_indicate_arrow))
+        self.wait(0.5)
+        new_text =  Tex(r"$f^{-1}(f(m_{1,3};\alpha_3))$",font_size=40).scale(1).shift(3.5*UP)
+        new_indicate_arrow = Arrow(text_function.get_center(),arrowList[6].get_center(),buff=0.3)
+        self.play(Transform(text_function, new_text),Transform(indicate_arrow, new_indicate_arrow))
+        self.wait(0.5)
+        self.play(Uncreate(text_function),Uncreate(indicate_arrow),run_time=0.5)
+
         self.wait(0.5)
         self.play(AnimationGroup(*AnimationList[(n_binary*2):],lag_ratio=0.2))
         AnimationList = []
