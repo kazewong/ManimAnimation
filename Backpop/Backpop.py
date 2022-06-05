@@ -113,10 +113,10 @@ class BackPop(Scene):
         for i in range(n_binary-1,-1,-1):
             remnentList.append(Binary(radius=0, center = np.array([2,i-1,0]), trail_length=1).set_color(interpolate_color(BLUE, RED, i/(n_binary-1))))
             for j in range(3):
-                binaryList.append(Binary(radius=0.1,center = np.array([-2,j*2+i*0.5-2,0]), trail_length=1).set_color(interpolate_color(RED, BLUE, (3*j+i)/(3*n_binary-1))))
+                binaryList.append(Binary(radius=0.1,center = np.array([-2,j*2+i*0.66-2.66,0]), trail_length=1).set_color(interpolate_color(BLUE, RED, (3*j+i)/(3*n_binary-1))))
         for i in range(n_binary-1,-1,-1):
             for j in range(3):
-                arrowList.append(Arrow(remnentList[i],binaryList[3*i+j].center,buff=0.1).set_color(interpolate_color(RED, BLUE, (3*j+i)/(3*n_binary-1))))
+                arrowList.append(Line(remnentList[i],binaryList[3*i+j].center,buff=0.1).set_color([remnentList[i].get_color(),binaryList[3*i+j].get_color()]))
 
 
         self.distribution_median = Distribution(interp_median,color=BLUE)
@@ -124,14 +124,14 @@ class BackPop(Scene):
         high = self.distribution_median.axes.plot(interp_high, x_range=np.array([0,5,0.01]))
         area = self.distribution_median.axes.get_area(graph=low, x_range=[0,5], bounded_graph=high)
         group = VGroup(area,self.distribution_median)
-        self.add(group)
-        self.add(VGroup(*arrowList),VGroup(*binaryList),VGroup(*remnentList))
-        # self.wait(0.5)
-        # self.play(Transform(group, group .copy().rotate(-PI/2).scale(0.5).shift(5*RIGHT) ))
+        # self.add(group)
+        # self.add(VGroup(*arrowList),VGroup(*binaryList),VGroup(*remnentList))
+        self.wait(0.5)
+        self.play(Transform(group, group .copy().rotate(-PI/2).scale(0.5).shift(5*RIGHT) ))
 
-        # graph_points = group[1].graph.get_all_points()
-        # self.play(*[GrowFromPoint(remnentList[i], graph_points[np.linspace(0,graph_points.shape[0]-1,n_binary).astype(int)][i]) for i in range(n_binary-1,-1,-1)])
-        # self.wait(0.5)
+        graph_points = group[1].graph.get_all_points()
+        self.play(*[GrowFromPoint(remnentList[i], graph_points[np.linspace(0,graph_points.shape[0]-1,n_binary).astype(int)][i]) for i in range(n_binary-1,-1,-1)])
+        self.wait(0.5)
 
 
 class Binary(VGroup):
