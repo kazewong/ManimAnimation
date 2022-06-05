@@ -79,9 +79,10 @@ class CompareDistribution(Scene):
         low = self.distribution_median.axes.plot(interp_low, x_range=np.array([0,5,0.01]))
         high = self.distribution_median.axes.plot(interp_high, x_range=np.array([0,5,0.01]))
         area = self.distribution_median.axes.get_area(graph=low, x_range=[0,5], bounded_graph=high)
-        self.play(Create(self.distribution_theory),Create(self.distribution_median))
-        self.play(FadeIn(area)) 
+        self.add(self.distribution_theory)
         self.play(Write(text_simulation))
+        self.wait(0.5)
+        self.play(FadeIn(area),Create(self.distribution_median))
         self.wait(0.5)
         new_text =  Tex(r"$f(m_1;\alpha = -3)$",font_size=40).scale(1.5).shift(3.0*UP)
         self.play(Transform(self.distribution_theory, Distribution(lambda x: powerLaw(x,slope=-3,intercept=12))),
