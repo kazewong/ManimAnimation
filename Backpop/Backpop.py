@@ -32,7 +32,7 @@ class ForwardModel(Scene):
         # Prepare objects
 
         self.distribution = Distribution(powerLaw)
-        self.distribution_obs = Distribution(powerLaw,color=GREEN).rotate(-PI/2).scale(0.5).shift(5*RIGHT).shift(0.5*UP)
+        self.distribution_obs = Distribution(powerLaw,color=YELLOW).rotate(-PI/2).scale(0.5).shift(5*RIGHT).shift(0.5*UP)
         binaryList = []
         remnentList = []
         arrowList = []
@@ -80,7 +80,7 @@ class ForwardModel(Scene):
 class CompareDistribution(Scene):
     def construct(self):
         text_simulation = Tex(r"$f(m_1;\alpha = -2)$",font_size=40).scale(1.5).shift(3.0*UP)
-        self.distribution_theory = Distribution(powerLaw,color=GREEN)
+        self.distribution_theory = Distribution(powerLaw,color=YELLOW)
         self.distribution_median = Distribution(interp_median,with_axis=False,color=BLUE)
         low = self.distribution_median.axes.plot(interp_low, x_range=np.array([0,5,0.01]))
         high = self.distribution_median.axes.plot(interp_high, x_range=np.array([0,5,0.01]))
@@ -91,16 +91,47 @@ class CompareDistribution(Scene):
         self.play(FadeIn(area),Create(self.distribution_median))
         self.wait(0.5)
         new_text =  Tex(r"$f(m_1;\alpha = -3)$",font_size=40).scale(1.5).shift(3.0*UP)
-        self.play(Transform(self.distribution_theory, Distribution(lambda x: powerLaw(x,slope=-3,intercept=12))),
+        self.play(Transform(self.distribution_theory, Distribution(lambda x: powerLaw(x,slope=-3,intercept=12),color=YELLOW)),
                 Transform(text_simulation, new_text))
         new_text =  Tex(r"$f(m_1;\alpha = -1)$",font_size=40).scale(1.5).shift(3.0*UP)
-        self.play(Transform(self.distribution_theory, Distribution(lambda x: powerLaw(x,slope=-1,intercept=8))),
+        self.play(Transform(self.distribution_theory, Distribution(lambda x: powerLaw(x,slope=-1,intercept=8),color=YELLOW)),
                 Transform(text_simulation, new_text))
         new_text =  Tex(r"$f(m_1;\alpha = -2)$",font_size=40).scale(1.5).shift(3.0*UP)
-        self.play(Transform(self.distribution_theory, Distribution(lambda x: powerLaw(x,slope=-2,intercept=10))),
+        self.play(Transform(self.distribution_theory, Distribution(lambda x: powerLaw(x,slope=-2,intercept=10),color=YELLOW)),
                 Transform(text_simulation, new_text))
         self.wait(0.5)
+        self.play(Uncreate(text_simulation),Uncreate(self.distribution_theory.graph))
+        self.wait(0.5)
 
+class BackPop(Scene):
+    def construct(self):
+        remnentList = []
+        binaryList = []
+        arrowList = []
+
+        n_binary = 3
+        for i in range(n_binary-1,-1,-1):
+            remnentList.append(Binary(radius=0, center = np.array([2,i-1,0]), trail_length=1).set_color(interpolate_color(BLUE, RED, i/(n_binary-1))))
+            for j in range(3):
+                binaryList.append(Binary(radius=0.1,center = np.array([-2,j*2+i*0.5-2,0]), trail_length=1).set_color(interpolate_color(RED, BLUE, (3*j+i)/(3*n_binary-1))))
+        for i in range(n_binary-1,-1,-1):
+            for j in range(3):
+                arrowList.append(Arrow(remnentList[i],binaryList[3*i+j].center,buff=0.1).set_color(interpolate_color(RED, BLUE, (3*j+i)/(3*n_binary-1))))
+
+
+        self.distribution_median = Distribution(interp_median,color=BLUE)
+        low = self.distribution_median.axes.plot(interp_low, x_range=np.array([0,5,0.01]))
+        high = self.distribution_median.axes.plot(interp_high, x_range=np.array([0,5,0.01]))
+        area = self.distribution_median.axes.get_area(graph=low, x_range=[0,5], bounded_graph=high)
+        group = VGroup(area,self.distribution_median)
+        self.add(group)
+        self.add(VGroup(*arrowList),VGroup(*binaryList),VGroup(*remnentList))
+        # self.wait(0.5)
+        # self.play(Transform(group, group .copy().rotate(-PI/2).scale(0.5).shift(5*RIGHT) ))
+
+        # graph_points = group[1].graph.get_all_points()
+        # self.play(*[GrowFromPoint(remnentList[i], graph_points[np.linspace(0,graph_points.shape[0]-1,n_binary).astype(int)][i]) for i in range(n_binary-1,-1,-1)])
+        # self.wait(0.5)
 
 
 class Binary(VGroup):
