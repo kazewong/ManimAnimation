@@ -166,6 +166,7 @@ class BackPop(Scene):
 
         self.wait(0.5)
         self.play(AnimationGroup(*AnimationList[(n_binary*2):],lag_ratio=0.2))
+        self.wait(0.5)
         AnimationList = []
         for j in range(3):
             AnimationList.append(FadeOut(remnentList[j],shift=0.1*LEFT))
