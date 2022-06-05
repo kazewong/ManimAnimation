@@ -7,15 +7,24 @@ from manim import *
 from scipy.interpolate import interp1d
 import numpy as np
 
-def powerLaw(x):
-    output = -2*x+10
+def powerLaw(x,slope=-2,intercept=10):
+    output = slope*x+intercept
     return output
 
 GWTC3_m1_data = np.load('/home/kaze/Work/ManimAnimation/Backpop/GWTC3_m1_pp.npz')
-axis = GWTC3_m1_data['axis']
-median = GWTC3_m1_data['pm1_med']
-low = GWTC3_m1_data['pm1_low']
-high = GWTC3_m1_data['pm1_high']
+axis = (GWTC3_m1_data['axis']-2.)/98.*5
+median =  np.log10(GWTC3_m1_data['pm1_med']+0.0001)
+y_min = median.min()
+y_max = median.max()
+low = np.log10(GWTC3_m1_data['pm1_low']+0.0001)
+high = np.log10(GWTC3_m1_data['pm1_high']+0.0001)
+median =  (median-y_min)/(y_max-y_min)*10
+low = (low-y_min)/(y_max-y_min)*10
+high = (high-y_min)/(y_max-y_min)*10
+
+interp_median = interp1d(axis, median, bounds_error=False,fill_value=0)
+interp_low = interp1d(axis, low, bounds_error=False,fill_value=0)
+interp_high = interp1d(axis, high, bounds_error=False,fill_value=0)
 
 class ForwardModel(Scene):
     def construct(self):
@@ -64,7 +73,26 @@ class ForwardModel(Scene):
 
 class CompareDistribution(Scene):
     def construct(self):
-        self.distribution_obs = Distribution(powerLaw).rotate(-PI/2).scale(0.5).shift(5*RIGHT)
+        text_simulation = Tex(r"$f(m_1;\alpha = -2)$",font_size=40).scale(1.5).shift(3.0*UP)
+        self.distribution_theory = Distribution(powerLaw)
+        self.distribution_median = Distribution(interp_median,with_axis=False,color=BLUE)
+        low = self.distribution_median.axes.plot(interp_low, x_range=np.array([0,5,0.01]))
+        high = self.distribution_median.axes.plot(interp_high, x_range=np.array([0,5,0.01]))
+        area = self.distribution_median.axes.get_area(graph=low, x_range=[0,5], bounded_graph=high)
+        self.play(Create(self.distribution_theory),Create(self.distribution_median))
+        self.play(FadeIn(area)) 
+        self.play(Write(text_simulation))
+        self.wait(0.5)
+        new_text =  Tex(r"$f(m_1;\alpha = -3)$",font_size=40).scale(1.5).shift(3.0*UP)
+        self.play(Transform(self.distribution_theory, Distribution(lambda x: powerLaw(x,slope=-3,intercept=12))),
+                Transform(text_simulation, new_text))
+        new_text =  Tex(r"$f(m_1;\alpha = -1)$",font_size=40).scale(1.5).shift(3.0*UP)
+        self.play(Transform(self.distribution_theory, Distribution(lambda x: powerLaw(x,slope=-1,intercept=8))),
+                Transform(text_simulation, new_text))
+        new_text =  Tex(r"$f(m_1;\alpha = -2)$",font_size=40).scale(1.5).shift(3.0*UP)
+        self.play(Transform(self.distribution_theory, Distribution(lambda x: powerLaw(x,slope=-2,intercept=10))),
+                Transform(text_simulation, new_text))
+        self.wait(0.5)
 
 
 
@@ -109,17 +137,23 @@ class Binary(VGroup):
 
 
 class Distribution(VGroup):
-    def __init__(self, function):
+    def __init__(self, function, with_axis=True, color=RED):
         super().__init__()
         self.axes = Axes(x_range=[0,5], y_range=[0,10,10],axis_config={"include_tip": False})
-        y_label = self.axes.get_y_axis_label(r"p(m_{1})", edge=LEFT, direction=LEFT).rotate(PI/2).shift(0.5*LEFT)
-        x_label = self.axes.get_x_axis_label(r"m_{1}", edge=DOWN, direction=DOWN,buff=10)
-        self.grid_labels = VGroup(x_label, y_label)
-        axis = np.linspace(0.1,5,100)
-        self.graph = self.axes.plot_line_graph(x_values=axis,y_values=function(axis),line_color=RED,add_vertex_dots=False, stroke_width=4,)
-        self.add(self.axes,self.graph, self.grid_labels)
+        axis = np.linspace(0.1,5,500)
+        self.graph = self.axes.plot_line_graph(x_values=axis,y_values=function(axis),line_color=color,add_vertex_dots=False, stroke_width=4,)
+        self.with_axis = with_axis
+        if with_axis:
+            y_label = self.axes.get_y_axis_label(r"p(m_{1})", edge=LEFT, direction=LEFT).rotate(PI/2).shift(0.5*LEFT)
+            x_label = self.axes.get_x_axis_label(r"m_{1}", edge=DOWN, direction=DOWN,buff=10)
+            self.grid_labels = VGroup(x_label, y_label)
+            self.add(self.axes,self.graph, self.grid_labels)
+        else:
+            self.add(self.axes,self.graph)
 
     @override_animation(Create)
     def _create(self,**kwargs):
-        return AnimationGroup(Create(self.axes),Create(self.graph),Create(self.grid_labels),lag_ratio=0.5)
-
+        if self.with_axis:
+            return AnimationGroup(Create(self.axes),Create(self.graph),Create(self.grid_labels))
+        else:
+            return AnimationGroup(Create(self.axes),Create(self.graph))
