@@ -32,7 +32,7 @@ class ForwardModel(Scene):
         # Prepare objects
 
         self.distribution = Distribution(powerLaw)
-        self.distribution_obs = Distribution(powerLaw).rotate(-PI/2).scale(0.5).shift(5*RIGHT)
+        self.distribution_obs = Distribution(powerLaw,color=GREEN).rotate(-PI/2).scale(0.5).shift(5*RIGHT).shift(0.5*UP)
         binaryList = []
         remnentList = []
         arrowList = []
@@ -61,20 +61,26 @@ class ForwardModel(Scene):
 
         # Evolve binaries        
         AnimationList = []
-        text_simulation = Tex("Evolve",font_size=40).scale(1.5).shift(2.5*UP)
+        text_simulation = Tex("Evolve",font_size=40).scale(1.5).shift(3.5*UP)
+        text_function = Tex(r"$f(m_1;\alpha = -2)$",font_size=30).scale(1.5).shift(2.5*UP)
         for i in range(n_binary-1,-1,-1):
             AnimationList.append(FadeOut(arrowList[i],shift=RIGHT,scale=0))
             AnimationList.append(Transform(binaryList[i],remnentList[i]))
-        self.play(AnimationGroup(*[GrowArrow(arrowList[i]) for i in range(n_binary-1,-1,-1)],lag_ratio=0.2),Create(text_simulation))
-        self.play(Uncreate(text_simulation),AnimationGroup(*AnimationList,lag_ratio=0.2))
+        self.play(Create(text_simulation))
+        self.play(Create(text_function))
+
+        self.play(AnimationGroup(*[GrowArrow(arrowList[i]) for i in range(n_binary-1,-1,-1)],lag_ratio=0.2))
+        self.play(Uncreate(text_simulation),Uncreate(text_function),AnimationGroup(*AnimationList,lag_ratio=0.2))
         self.play(AnimationGroup(*[FadeOut(binaryList[i],shift=RIGHT,scale=0) for i in range(n_binary-1,-1,-1)]),FadeIn(self.distribution_obs))
+        self.play(Wiggle(self.distribution.graph))
+        self.play(Wiggle(self.distribution_obs.graph))
         self.play(FadeOut(self.distribution),Transform(self.distribution_obs, self.distribution_obs.copy().rotate(PI/2).scale(2).shift(5*LEFT)))
         self.wait(0.5)
 
 class CompareDistribution(Scene):
     def construct(self):
         text_simulation = Tex(r"$f(m_1;\alpha = -2)$",font_size=40).scale(1.5).shift(3.0*UP)
-        self.distribution_theory = Distribution(powerLaw)
+        self.distribution_theory = Distribution(powerLaw,color=GREEN)
         self.distribution_median = Distribution(interp_median,with_axis=False,color=BLUE)
         low = self.distribution_median.axes.plot(interp_low, x_range=np.array([0,5,0.01]))
         high = self.distribution_median.axes.plot(interp_high, x_range=np.array([0,5,0.01]))
