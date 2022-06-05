@@ -4,6 +4,7 @@ from nturl2path import pathname2url
 from telnetlib import DO
 from turtle import circle
 from manim import *
+from scipy.fftpack import shift
 from scipy.interpolate import interp1d
 import numpy as np
 
@@ -26,12 +27,20 @@ interp_median = interp1d(axis, median, bounds_error=False,fill_value=0)
 interp_low = interp1d(axis, low, bounds_error=False,fill_value=0)
 interp_high = interp1d(axis, high, bounds_error=False,fill_value=0)
 
+GWTC3_m1pro = np.load('/home/kaze/Work/ManimAnimation/Backpop//GWTC3_m1pro.npz')
+bins = GWTC3_m1pro['bin']
+counts = GWTC3_m1pro['count']
+bins = (bins - bins.min())/(bins.max()-bins.min())*5
+counts = (counts-counts.min())/(counts.max()-counts.min())*10
+
+interp_count = interp1d(bins, counts, bounds_error=False,fill_value=0)
+
 class ForwardModel(Scene):
     def construct(self):
 
         # Prepare objects
 
-        self.distribution = Distribution(powerLaw)
+        self.distribution = Distribution(powerLaw,label=r'm_{1,\rm{pro}}')
         self.distribution_obs = Distribution(powerLaw,color=YELLOW).rotate(-PI/2).scale(0.5).shift(5*RIGHT).shift(0.5*UP)
         binaryList = []
         remnentList = []
@@ -116,9 +125,9 @@ class BackPop(Scene):
                 binaryList.append(Binary(radius=0.1,center = np.array([-2,j*2+i*0.66-2.66,0]), trail_length=1).set_color(interpolate_color(BLUE, RED, (3*j+i)/(3*n_binary-1))))
         for i in range(n_binary-1,-1,-1):
             for j in range(3):
-                arrowList.append(Line(remnentList[i],binaryList[3*i+j].center,buff=0.1).set_color([remnentList[i].get_color(),binaryList[3*i+j].get_color()]))
+                arrowList.append(Arrow (remnentList[i],binaryList[3*i+j].center,buff=0.1).set_color([remnentList[i].get_color(),binaryList[3*i+j].get_color()]))
 
-
+        self.distribution = Distribution(interp_count,label=r'm_{1,\rm{pro}}').rotate(PI/2).scale(0.5).shift(5*LEFT)
         self.distribution_median = Distribution(interp_median,color=BLUE)
         low = self.distribution_median.axes.plot(interp_low, x_range=np.array([0,5,0.01]))
         high = self.distribution_median.axes.plot(interp_high, x_range=np.array([0,5,0.01]))
@@ -131,6 +140,25 @@ class BackPop(Scene):
 
         graph_points = group[1].graph.get_all_points()
         self.play(*[GrowFromPoint(remnentList[i], graph_points[np.linspace(0,graph_points.shape[0]-1,n_binary).astype(int)][i]) for i in range(n_binary-1,-1,-1)])
+        self.wait(0.5)
+        AnimationList = []
+        for j in range(3):
+            for i in range(n_binary-1,-1,-1):
+                AnimationList.append(GrowArrow(arrowList[i+3*(n_binary-j-1)]))
+                AnimationList.append(FadeIn(binaryList[i+3*j]))
+        self.play(AnimationGroup(*AnimationList[:(n_binary*2)],lag_ratio=0.2))
+        self.wait(0.5)
+        self.play(AnimationGroup(*AnimationList[(n_binary*2):],lag_ratio=0.2))
+        AnimationList = []
+        for j in range(3):
+            AnimationList.append(FadeOut(remnentList[j],shift=0.1*LEFT))
+            for i in range(n_binary-1,-1,-1):
+                AnimationList.append(Uncreate(arrowList[3*j+i].set_points(arrowList[3*j+i].get_points()[::-1])))
+        self.play(AnimationGroup(*AnimationList))
+        self.wait(0.5)
+        self.play(AnimationGroup(*[FadeOut(binaryList[i],shift=LEFT,scale=0) for i in range(3*n_binary-1,-1,-1)]),FadeIn(self.distribution))
+        self.wait(0.5)
+        self.play(FadeOut(group),Transform(self.distribution, self.distribution.copy().rotate(-PI/2).scale(2).shift(5*RIGHT)))
         self.wait(0.5)
 
 
@@ -175,15 +203,15 @@ class Binary(VGroup):
 
 
 class Distribution(VGroup):
-    def __init__(self, function, with_axis=True, color=RED):
+    def __init__(self, function, with_axis=True, color=RED,label='m_{1}'):
         super().__init__()
         self.axes = Axes(x_range=[0,5], y_range=[0,10,10],axis_config={"include_tip": False})
         axis = np.linspace(0.1,5,500)
         self.graph = self.axes.plot_line_graph(x_values=axis,y_values=function(axis),line_color=color,add_vertex_dots=False, stroke_width=4,)
         self.with_axis = with_axis
         if with_axis:
-            y_label = self.axes.get_y_axis_label(r"p(m_{1})", edge=LEFT, direction=LEFT).rotate(PI/2).shift(0.5*LEFT)
-            x_label = self.axes.get_x_axis_label(r"m_{1}", edge=DOWN, direction=DOWN,buff=10)
+            y_label = self.axes.get_y_axis_label(r"p("+label+")", edge=LEFT, direction=LEFT).rotate(PI/2).shift(0.5*LEFT)
+            x_label = self.axes.get_x_axis_label(r""+label, edge=DOWN, direction=DOWN,buff=10)
             self.grid_labels = VGroup(x_label, y_label)
             self.add(self.axes,self.graph, self.grid_labels)
         else:
