@@ -22,6 +22,8 @@ high = np.log10(GWTC3_m1_data['pm1_high']+0.0001)
 median =  (median-y_min)/(y_max-y_min)*10
 low = (low-y_min)/(y_max-y_min)*10
 high = (high-y_min)/(y_max-y_min)*10
+low = low.clip(0.,11)
+high = high.clip(0.,11)
 
 interp_median = interp1d(axis, median, bounds_error=False,fill_value=0)
 interp_low = interp1d(axis, low, bounds_error=False,fill_value=0)
