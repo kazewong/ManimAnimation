@@ -120,8 +120,6 @@ class CompareDistribution(Scene):
         self.play(Transform(self.distribution_theory, Distribution(lambda x: powerLaw(x,slope=-2,intercept=10),color=YELLOW)),
                 Transform(text_simulation, new_text))
         self.wait(0.5)
-        self.play(Uncreate(text_simulation),Uncreate(self.distribution_median),Uncreate(area))
-        self.wait(0.5)
 
 class ProblemWithForwardModelling(Scene):
     def construct(self):
