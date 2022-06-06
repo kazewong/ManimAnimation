@@ -16,6 +16,9 @@ def powerLaw(x,slope=-2,intercept=10):
     output = slope*x+intercept
     return output
 
+def gaussian(x, mu=2.5, sigma=1, A=1):
+    return A*np.exp(-(x - mu)**2/(2*sigma**2))
+
 GWTC3_m1_data = np.load('/home/kaze/Work/ManimAnimation/Backpop/GWTC3_m1_pp.npz')
 axis = (GWTC3_m1_data['axis']-2.)/98.*5
 median =  np.log10(GWTC3_m1_data['pm1_med']+0.0001)
@@ -49,7 +52,7 @@ class ForwardModel(Scene):
 
         # Prepare objects
 
-        self.distribution = Distribution(powerLaw,label=r'm_{1,\rm{pro}}')
+        self.distribution = Distribution(powerLaw,label=r'm_{1,\rm{ini}}')
         self.distribution_obs = Distribution(powerLaw,color=YELLOW).rotate(-PI/2).scale(0.5).shift(5*RIGHT).shift(0.5*UP)
         binaryList = []
         remnentList = []
@@ -117,12 +120,34 @@ class CompareDistribution(Scene):
         self.play(Transform(self.distribution_theory, Distribution(lambda x: powerLaw(x,slope=-2,intercept=10),color=YELLOW)),
                 Transform(text_simulation, new_text))
         self.wait(0.5)
-        self.play(Uncreate(text_simulation),Uncreate(self.distribution_theory.graph))
+        self.play(Uncreate(text_simulation),Uncreate(self.distribution_median),Uncreate(area))
         self.wait(0.5)
 
 class ProblemWithForwardModelling(Scene):
     def construct(self):
-        pass
+
+        self.distribution_final = Distribution(powerLaw,color=YELLOW)
+        self.distribution_initial = Distribution(powerLaw,color=RED,label=r'm_{1,\rm{ini}}')
+        self.play(Transform(self.distribution_final,self.distribution_final.copy().scale(0.5).shift(4*RIGHT)))
+        self.play(Write(Tex("Final population",font_size=40).scale(1.5).shift(3.0*UP).shift(3.5*RIGHT)))
+        self.play(Transform(self.distribution_initial,self.distribution_initial.copy().scale(0.5).shift(3*LEFT)))
+        self.play(Write(Tex("Initial population",font_size=40).scale(1.5).shift(3.0*UP).shift(3*LEFT)))
+        AnimationList = []
+        AnimationList.append(Transform(self.distribution_initial,Distribution(lambda x: gaussian(x,mu=2,sigma=1,A=5),color=RED,label=r'm_{1,\rm{ini}}').scale(0.5).shift(3*LEFT)))
+        AnimationList.append(Transform(self.distribution_final,Distribution(lambda x: gaussian(x,mu=2,sigma=1,A=5),color=YELLOW).scale(0.5).shift(4*RIGHT)))
+        self.play(AnimationGroup(*AnimationList,lag_ratio=0.4))
+        AnimationList = []
+        AnimationList.append(Transform(self.distribution_initial.graph,ParametricFunction(normalize_elphant,color=RED).rotate(-PI/2).move_to(self.distribution_initial.axes.get_center()).scale(2)))
+        AnimationList.append(Transform(self.distribution_final,Distribution(lambda x: gaussian(x,mu=2,sigma=0.2,A=9),color=YELLOW).scale(0.5).shift(4*RIGHT)))
+        self.play(AnimationGroup(*AnimationList,lag_ratio=0.4))
+        AnimationList = []
+        AnimationList.append(Transform(self.distribution_initial.graph,ParametricFunction(lambda t: normalize_elphant(t,70-30j),color=RED).rotate(-PI/2).move_to(self.distribution_initial.axes.get_center()).scale(2)))
+        AnimationList.append(Transform(self.distribution_final,Distribution(lambda x: gaussian(x,mu=2,sigma=0.6,A=7),color=YELLOW).scale(0.5).shift(4*RIGHT)))
+        self.play(AnimationGroup(*AnimationList,lag_ratio=0.4))
+
+        self.wait(0.5)
+
+
 
 class BackPop(Scene):
     def construct(self):
@@ -142,7 +167,7 @@ class BackPop(Scene):
 
 
 
-        self.distribution = Distribution(interp_count,label=r'm_{1,\rm{pro}}').rotate(PI/2).scale(0.5).shift(5*LEFT)
+        self.distribution = Distribution(interp_count,label=r'm_{1,\rm{ini}}').rotate(PI/2).scale(0.5).shift(5*LEFT)
         self.distribution_median = Distribution(interp_median,color=BLUE)
         low = self.distribution_median.axes.plot(interp_low, x_range=np.array([0,5,0.01]))
         high = self.distribution_median.axes.plot(interp_high, x_range=np.array([0,5,0.01]))
@@ -268,7 +293,7 @@ def fourier(t, C):
         f = f + A[k]*np.cos(k*t) + B[k]*np.sin(k*t)
     return f
 
-def elephant(t):
+def elephant(t,p1=50-30j):
     npar = 6
     Cx = np.zeros((npar,), dtype='complex')
     Cy = np.zeros((npar,), dtype='complex')
@@ -282,7 +307,29 @@ def elephant(t):
     Cy[2] = p2.imag*1j
     Cy[3] = p3.imag*1j
 
-    x = np.append(fourier(t,Cx), [-p5.imag])
-    y = np.append(fourier(t,Cy), [p5.imag])
+    x = fourier(t,Cx)
+    y = fourier(t,Cy)
 
-    return x,y
+    return np.array((x,y,0))
+
+
+        
+def normalize_elphant(t,p1=50-30j):
+    t_range = np.linspace(0,2*np.pi,100)
+    x_min = 1000
+    x_max = -1000
+    y_min = 1000
+    y_max = -1000
+    for i in range(100):
+        elephant_unormalize = elephant(t_range[i],p1)
+        if x_min > elephant_unormalize[0]:
+            x_min = elephant_unormalize[0]
+        if x_max < elephant_unormalize[0]:
+            x_max = elephant_unormalize[0]
+        if y_min > elephant_unormalize[1]:
+            y_min = elephant_unormalize[1]
+        if y_max < elephant_unormalize[1]:
+            y_max = elephant_unormalize[1]
+    value = elephant(t*2*np.pi,p1)
+    output = np.array(((value[0]-x_min)/(x_max-x_min),(value[1]-y_min)/(y_max-y_min),0))
+    return output
