@@ -8,6 +8,10 @@ from scipy.fftpack import shift
 from scipy.interpolate import interp1d
 import numpy as np
 
+"""
+Loading data
+"""
+
 def powerLaw(x,slope=-2,intercept=10):
     output = slope*x+intercept
     return output
@@ -37,6 +41,9 @@ counts = (counts-counts.min())/(counts.max()-counts.min())*10
 
 interp_count = interp1d(bins, counts, bounds_error=False,fill_value=0)
 
+"""
+Scenes
+"""
 class ForwardModel(Scene):
     def construct(self):
 
@@ -113,6 +120,10 @@ class CompareDistribution(Scene):
         self.play(Uncreate(text_simulation),Uncreate(self.distribution_theory.graph))
         self.wait(0.5)
 
+class ProblemWithForwardModelling(Scene):
+    def construct(self):
+        pass
+
 class BackPop(Scene):
     def construct(self):
         remnentList = []
@@ -180,6 +191,10 @@ class BackPop(Scene):
         self.wait(0.5)
 
 
+"""
+Helper functions
+"""
+
 class Binary(VGroup):
     def __init__(self,radius=0.2,center: np.array=np.array([0,0,0]),trail_length = 0,final_center = None):
         super().__init__()
@@ -241,3 +256,33 @@ class Distribution(VGroup):
             return AnimationGroup(Create(self.axes),Create(self.graph),Create(self.grid_labels))
         else:
             return AnimationGroup(Create(self.axes),Create(self.graph))
+
+# elephant parameters
+p1, p2, p3, p4 = (50 - 30j, 18 +  8j, 12 - 10j, -14 - 60j )
+p5 = 40 + 20j # eyepiece
+
+def fourier(t, C):
+    f = np.zeros(t.shape)
+    A, B = C.real, C.imag
+    for k in range(len(C)):
+        f = f + A[k]*np.cos(k*t) + B[k]*np.sin(k*t)
+    return f
+
+def elephant(t):
+    npar = 6
+    Cx = np.zeros((npar,), dtype='complex')
+    Cy = np.zeros((npar,), dtype='complex')
+
+    Cx[1] = p1.real*1j
+    Cx[2] = p2.real*1j
+    Cx[3] = p3.real
+    Cx[5] = p4.real
+
+    Cy[1] = p4.imag + p1.imag*1j
+    Cy[2] = p2.imag*1j
+    Cy[3] = p3.imag*1j
+
+    x = np.append(fourier(t,Cx), [-p5.imag])
+    y = np.append(fourier(t,Cy), [p5.imag])
+
+    return x,y
