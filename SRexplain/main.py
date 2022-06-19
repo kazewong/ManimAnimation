@@ -24,9 +24,11 @@ class SRMain(Scene):
         equation2 = sympify('(((x1 * x1) - 2.0) + (cos(x2) * 3.0))')
         G1 = get_graph(equation1)
         G2 = get_graph(equation2)
-        self.play(Write(G1),run_time=2)
-        self.play(ReplacementTransform(G1, G2), run_time=2)
-        self.wait(1)
+        G = get_manim_graph(nx.compose(nx.intersection(G1,G2),G2))
+        self.add(G)
+        # self.play(Write(G1),run_time=2)
+        # self.play(ReplacementTransform(G1, G2), run_time=2)
+        # self.wait(1)
 
 
 class FitMassFunction(Scene):

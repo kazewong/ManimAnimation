@@ -40,15 +40,27 @@ def populate_graph(graph, equation, mother, labels, counter):
         return graph, labels, counter
 
 def get_graph(equation):
-    G = nx.Graph()
+    G = nx.DiGraph()
     G.add_node('ROOT')
     labels = {}
     G, labels, counter = populate_graph(G, equation, 'ROOT', labels, 0)
     root = type(equation).__name__+'1'
+    return G
+
+def get_manim_graph(G):
     node_list = list(G.nodes)
     edge_list = list(G.edges)
-    node_list.remove('ROOT')
-    edge_list.remove(('ROOT', root))
+    labels = {node_list[i]: node_list[i][:-1][:3] for i in range(len(node_list))}
+    root = list(nx.topological_sort(G))[-2]
+    if 'ROOT' in node_list:
+        node_list.remove('ROOT')
+        del labels['ROOT']
+        if ('ROOT', root) in edge_list:
+            edge_list.remove(('ROOT', root))
+        if (root, 'ROOT') in edge_list:
+            edge_list.remove((root, 'ROOT'))
     graph = Graph(node_list, edge_list, layout="tree", root_vertex=root, labels=labels, layout_config={'vertex_spacing':(1.5,1.5)},vertex_config={'radius':0.5})
     return graph
+
+
     
