@@ -44,25 +44,3 @@ class FitMassFunction(Scene):
         self.add(self.plot, self.grid_labels)
         # self.play(Create(self.axes), Create(median), FadeIn(area), Write(self.grid_labels))
 
-
-class Distribution(VGroup):
-    def __init__(self, function, with_axis=True, color=RED,label='m_{1}'):
-        super().__init__()
-        self.axes = Axes(x_range=[0,5], y_range=[0,10,10],axis_config={"include_tip": False})
-        axis = np.linspace(0.1,5,500)
-        self.graph = self.axes.plot_line_graph(x_values=axis,y_values=function(axis),line_color=color,add_vertex_dots=False, stroke_width=4,)
-        self.with_axis = with_axis
-        if with_axis:
-            y_label = self.axes.get_y_axis_label(r"p("+label+")", edge=LEFT, direction=LEFT).rotate(PI/2).shift(0.5*LEFT)
-            x_label = self.axes.get_x_axis_label(r""+label, edge=DOWN, direction=DOWN,buff=10)
-            self.grid_labels = VGroup(x_label, y_label)
-            self.add(self.axes,self.graph, self.grid_labels)
-        else:
-            self.add(self.axes,self.graph)
-
-    @override_animation(Create)
-    def _create(self,**kwargs):
-        if self.with_axis:
-            return AnimationGroup(Create(self.axes),Create(self.graph),Create(self.grid_labels))
-        else:
-            return AnimationGroup(Create(self.axes),Create(self.graph))
