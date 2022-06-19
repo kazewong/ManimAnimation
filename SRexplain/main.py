@@ -1,61 +1,22 @@
+from curses.ascii import CR
+from venv import create
 from manim import *
-import networkx as nx
 from sympy import sympify
+from SRgraph import *
+import numpy as np
+from scipy.interpolate import interp1d
 
-operator_list = {}
-
-
-
-def populate_graph(graph, equation, mother, labels, counter):
-    if len(equation.args) == 0:
-        counter+=1
-        if type(equation).__name__ == 'Symbol':
-            labels[str(equation)+str(counter)] = str(equation)[:3]
-        else:
-            labels[str(equation)+str(counter)] = str(equation)[:3]
-        graph.add_node(str(equation)+str(len(labels)))
-        graph.add_edge(str(equation)+str(len(labels)), mother)
-        return graph, labels, counter
-    elif len(equation.args) == 1:
-        counter+=1
-        type_name = type(equation).__name__+str(counter) 
-        labels[type_name] = type(equation).__name__
-        graph.add_node(type_name)
-        graph.add_edge(type_name, mother)
-        graph, labels, counter = populate_graph(graph, equation.args[0], type_name, labels, counter)
-        return graph, labels, counter
-    elif len(equation.args) == 2:
-        counter+=1
-        type_name = type(equation).__name__+str(counter) 
-        labels[type_name] = type(equation).__name__
-        graph.add_node(type_name)
-        graph.add_edge(type_name, mother)
-        graph, labels, counter = populate_graph(graph, equation.args[1], type_name, labels, counter)
-        graph, labels, counter = populate_graph(graph, equation.args[0], type_name, labels, counter)
-        return graph, labels, counter
-    else:
-        counter+=1
-        type_name = type(equation).__name__+str(counter) 
-        labels[type_name] = type(equation).__name__
-        graph.add_node(type_name)
-        graph.add_edge(type_name, mother)
-        for i in range(len(equation.args)):
-            graph, labels, counter = populate_graph(graph, equation.args[i], type_name, labels, counter)
-        return graph, labels, counter
-
-def get_graph(equation):
-    G = nx.Graph()
-    G.add_node('ROOT')
-    labels = {}
-    G, labels, counter = populate_graph(G, equation, 'ROOT', labels, 0)
-    root = type(equation).__name__+'1'
-    node_list = list(G.nodes)
-    edge_list = list(G.edges)
-    node_list.remove('ROOT')
-    edge_list.remove(('ROOT', root))
-    graph = Graph(node_list, edge_list, layout="tree", root_vertex=root, labels=labels, layout_config={'vertex_spacing':(1.5,1.5)},vertex_config={'radius':0.5})
-    return graph
-    
+data = np.load('./GWTC3_m1_spectrum.npz')
+m1_axis = data['axis']
+pm1_med = data['pm1_med']
+pm1_med[pm1_med<1e-6] = 1e-6
+pm1_low = data['pm1_low']
+pm1_low[pm1_low<1e-6] = 1e-6
+pm1_high = data['pm1_high']
+pm1_high[pm1_high<1e-6] = 1e-6
+pm1_med = interp1d(m1_axis,pm1_med,bounds_error=False,fill_value=1e-12)
+pm1_low = interp1d(m1_axis,pm1_low,bounds_error=False,fill_value=1e-12)
+pm1_high = interp1d(m1_axis,pm1_high,bounds_error=False,fill_value=1e-12)
 
 class SRMain(Scene):
     def construct(self):
@@ -66,3 +27,42 @@ class SRMain(Scene):
         self.play(Write(G1),run_time=2)
         self.play(ReplacementTransform(G1, G2), run_time=2)
         self.wait(1)
+
+
+class FitMassFunction(Scene):
+    def construct(self):
+        self.axes = Axes(x_range=[0,100,10], y_range=[-6,1],axis_config={"include_tip": True, "include_numbers": True},y_axis_config={"scaling": LogBase(10)})
+        self.axes.y_range = [1e-6,6]
+        median = self.axes.plot_line_graph(x_values=m1_axis, y_values=pm1_med(m1_axis), line_color=BLUE, add_vertex_dots=False, stroke_width = 4)
+        low = self.axes.plot(pm1_low,x_range=np.array([1,100,0.1]))
+        high = self.axes.plot(pm1_high,x_range=np.array([1,100,0.1]))
+        area = self.axes.get_area(graph=low, x_range=[0,100], bounded_graph=high)
+        self.plot = VGroup(self.axes, median, area).scale(0.9).shift(UP*0.3).shift(RIGHT*0.5)
+        y_label = self.axes.get_y_axis_label(r"p(m_1)", edge=LEFT, direction=LEFT, buff=1).rotate(PI/2).shift(0.6*LEFT)
+        x_label = self.axes.get_x_axis_label(r"m_1", edge=DOWN, direction=DOWN,buff=10).shift(0.8*UP).shift(0.4*LEFT)
+        self.grid_labels = VGroup(x_label, y_label).shift(RIGHT*0.5).shift(DOWN*0.5)
+        self.add(self.plot, self.grid_labels)
+        # self.play(Create(self.axes), Create(median), FadeIn(area), Write(self.grid_labels))
+
+
+class Distribution(VGroup):
+    def __init__(self, function, with_axis=True, color=RED,label='m_{1}'):
+        super().__init__()
+        self.axes = Axes(x_range=[0,5], y_range=[0,10,10],axis_config={"include_tip": False})
+        axis = np.linspace(0.1,5,500)
+        self.graph = self.axes.plot_line_graph(x_values=axis,y_values=function(axis),line_color=color,add_vertex_dots=False, stroke_width=4,)
+        self.with_axis = with_axis
+        if with_axis:
+            y_label = self.axes.get_y_axis_label(r"p("+label+")", edge=LEFT, direction=LEFT).rotate(PI/2).shift(0.5*LEFT)
+            x_label = self.axes.get_x_axis_label(r""+label, edge=DOWN, direction=DOWN,buff=10)
+            self.grid_labels = VGroup(x_label, y_label)
+            self.add(self.axes,self.graph, self.grid_labels)
+        else:
+            self.add(self.axes,self.graph)
+
+    @override_animation(Create)
+    def _create(self,**kwargs):
+        if self.with_axis:
+            return AnimationGroup(Create(self.axes),Create(self.graph),Create(self.grid_labels))
+        else:
+            return AnimationGroup(Create(self.axes),Create(self.graph))

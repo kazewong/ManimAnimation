@@ -19,7 +19,7 @@ def powerLaw(x,slope=-2,intercept=10):
 def gaussian(x, mu=2.5, sigma=1, A=1):
     return A*np.exp(-(x - mu)**2/(2*sigma**2))
 
-GWTC3_m1_data = np.load('/home/kaze/Work/ManimAnimation/Backpop/GWTC3_m1_pp.npz')
+GWTC3_m1_data = np.load('./GWTC3_m1_pp.npz')
 axis = (GWTC3_m1_data['axis']-2.)/98.*5
 median =  np.log10(GWTC3_m1_data['pm1_med']+0.0001)
 y_min = median.min()
@@ -36,7 +36,7 @@ interp_median = interp1d(axis, median, bounds_error=False,fill_value=0)
 interp_low = interp1d(axis, low, bounds_error=False,fill_value=0)
 interp_high = interp1d(axis, high, bounds_error=False,fill_value=0)
 
-GWTC3_m1pro = np.load('/home/kaze/Work/ManimAnimation/Backpop//GWTC3_m1pro.npz')
+GWTC3_m1pro = np.load('./GWTC3_m1pro.npz')
 bins = GWTC3_m1pro['bin']
 counts = GWTC3_m1pro['count']
 bins = (bins - bins.min())/(bins.max()-bins.min())*5
@@ -66,7 +66,7 @@ class ForwardModel(Scene):
         # Create initial distribution and rotate it
 
         self.play(Create(self.distribution))
-        self.wait(0.5)
+        self.wait()
         self.play(Transform(self.distribution, self.distribution.copy().rotate(PI/2).scale(0.5).shift(5*LEFT)))
 
         # Sample binaries from the distribution
@@ -145,7 +145,12 @@ class ProblemWithForwardModelling(Scene):
 
         self.wait(0.5)
 
-
+class BackPopFont(Scene):
+    def construct(self):
+        self.text = Tex("Can we do it differently?",font_size=40).scale(3)
+        self.play(Write(self.text))
+        self.play(Transform(self.text, Tex("Let's backpropagate!",font_size=40).scale(3)))
+        self.wait(0.5)
 
 class BackPop(Scene):
     def construct(self):
