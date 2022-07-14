@@ -1,7 +1,7 @@
 from curses.ascii import CR
 from venv import create
 from manim import *
-from sympy import sympify
+from sympy import sympify, lambdify
 from SRgraph import *
 import numpy as np
 from scipy.interpolate import interp1d
@@ -63,27 +63,50 @@ class PhenomenologicalModelling(Scene):
 
 class SRMain(Scene):
     def construct(self):
-        equation1 = sympify('(((x1 * x1) - 2.0) + (cos(x2)))')
-        equation2 = sympify('(((x1 * x1) - 2.0) + (cos(x2) * 3.0))')
-        self.tex = MathTex(r"(x_1*x_1) - 2 + \cos(x_2)",font_size=40,
-                    substrings_to_isolate=["(x_1*x_1)","\cos(x_2)"]).shift(3*LEFT)
+        equation1 = sympify('x1 + 2')
+        equation2 = sympify('x1 + 2 * sin(x1)')
+        self.tex1 = MathTex(r"2 + x_1 ",font_size=40,
+                    substrings_to_isolate=["+"]).shift(5.5*LEFT)
+        self.tex2 = MathTex(r"x_1 + 2 \sin{x_1}",font_size=40,
+                    substrings_to_isolate=["+","\sin{x_1}"]).shift(5.5*LEFT)
         G1 = get_graph(equation1)
         G2 = get_graph(equation2)
-        G1_manim = get_manim_graph(G1).shift(3*RIGHT)
-        G = get_manim_graph(nx.compose(nx.intersection(G1,G2),G2))
-        # self.add(G)
-        # self.play(Write(get_manim_graph(G1)),run_time=2)
-        self.play(Write(self.tex))
+        G1_manim = get_manim_graph(G1).shift(1.5*UP, 2.5*LEFT)
+        G2_manim = get_manim_graph(G2).shift(2.5*LEFT)
+
+        self.axes = Axes(x_range=[0,10], y_range=[0,12],axis_config={"include_tip": True, "include_numbers": True}).scale(0.9)
+        y_label = self.axes.get_y_axis_label(r"p(m_1)", edge=LEFT, direction=LEFT, buff=1).rotate(PI/2).shift(1*LEFT)
+        x_label = self.axes.get_x_axis_label(r"m_1", edge=DOWN, direction=DOWN,buff=10).shift(0.8*UP).shift(0.4*LEFT)
+        self.grid_labels = VGroup(x_label, y_label).shift(RIGHT*0.5).shift(DOWN*0.5)
+        x_axis = np.linspace(0,9,100)
+        self.function1 = self.axes.plot_line_graph(x_values = x_axis,y_values = lambdify(list(equation1.free_symbols),equation1)(x_axis),stroke_width=3,add_vertex_dots=False,line_color=WHITE).scale(0.5).shift(4*RIGHT)
+        self.function2 = self.axes.plot_line_graph(x_values = x_axis,y_values = lambdify(list(equation2.free_symbols),equation2)(x_axis),stroke_width=3,add_vertex_dots=False,line_color=WHITE).scale(0.5).shift(4*RIGHT)
+        self.plot_group = VGroup(self.grid_labels,self.axes).scale(0.5).shift(4*RIGHT)
+
+
+        self.play(Create(self.plot_group),Create(self.function1))
+        self.play(Write(self.tex1),run_time=0.5)
         # self.play(Write(G1_manim))
         self.play(FadeIn(G1_manim,shift=RIGHT))
-        self.play(Indicate(self.tex.submobjects[0])
-                    ,Indicate(G1_manim.vertices['Pow3'])
-                    ,Indicate(G1_manim.vertices['x15'])
-                    ,Indicate(G1_manim.vertices['24']))
+        print(G1_manim.vertices)
+        self.play(Indicate(self.tex1.submobjects[1])
+                    ,Indicate(G1_manim.vertices['Add1']))
+        self.play(Transform(self.function1,self.function2),ReplacementTransform(G1_manim,G2_manim),Transform(self.tex1,self.tex2))
         
         # self.play(ReplacementTransform(get_manim_graph(G1), get_manim_graph(G2)), run_time=2)
         self.wait(1)
 
+
+
+class MutateAndBreed(Scene):
+    
+    def construct(self):
+        equation1 = sympify('x1 + 2')
+        equation2 = sympify('x1 + 2 * sin(x1)')
+        G1 = get_manim_graph(get_graph(equation1)).shift(1.5*UP)#,3*LEFT)
+        G2 = get_manim_graph(get_graph(equation2))#.shift(3*RIGHT)
+        self.play(Write(G1))
+        self.play(Transform(G1,G2))
 
 def Gaussian(x, A, mu, sigma):
     return A*np.exp(-((x-mu)/sigma)**2)
