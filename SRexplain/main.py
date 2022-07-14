@@ -1,4 +1,5 @@
 from curses.ascii import CR
+from venv import create
 from manim import *
 from sympy import sympify
 from SRgraph import *
@@ -68,22 +69,34 @@ class SRMain(Scene):
                     substrings_to_isolate=["(x_1*x_1)","\cos(x_2)"]).shift(3*LEFT)
         G1 = get_graph(equation1)
         G2 = get_graph(equation2)
-        G1_manim = get_manim_graph(G1).shift(2*RIGHT)
+        G1_manim = get_manim_graph(G1).shift(3*RIGHT)
         G = get_manim_graph(nx.compose(nx.intersection(G1,G2),G2))
         # self.add(G)
         # self.play(Write(get_manim_graph(G1)),run_time=2)
         self.play(Write(self.tex))
         # self.play(Write(G1_manim))
-        self.play(Indicate(self.tex.submobjects[0]))
-        print(G1_manim.vertices)
-        # self.play(Indicate(G1_manim.vertices['Pow3']),Indicate(G1_manim.vertices['x15'])
-        #             ,Indicate(G1_manim.vertices['24']))
-        self.play(FadeOut(self.tex,shift=RIGHT),FadeIn(get_manim_graph(G1),shift=RIGHT))
+        self.play(FadeIn(G1_manim,shift=RIGHT))
+        self.play(Indicate(self.tex.submobjects[0])
+                    ,Indicate(G1_manim.vertices['Pow3'])
+                    ,Indicate(G1_manim.vertices['x15'])
+                    ,Indicate(G1_manim.vertices['24']))
+        
         # self.play(ReplacementTransform(get_manim_graph(G1), get_manim_graph(G2)), run_time=2)
         self.wait(1)
 
 
+def Gaussian(x, A, mu, sigma):
+    return A*np.exp(-((x-mu)/sigma)**2)
 class FitMassFunction(Scene):
+
+    def plot_gaussian(self, axes, gaussian_list, x_axis, A, mu, sigma):
+        y = Gaussian(x_axis, A, mu, sigma)
+        y[y<1e-6] = 1e-6
+        line = axes.plot_line_graph(x_values=x_axis,y_values=y,stroke_width=3,add_vertex_dots=False,line_color=GRAY_A)
+        line.set_stroke(opacity=0.7)
+        gaussian_list.append(line)
+        return gaussian_list
+
     def construct(self):
         self.axes = Axes(x_range=[0,100,10], y_range=[-6,1],axis_config={"include_tip": True, "include_numbers": True},y_axis_config={"scaling": LogBase(10)})
         median = self.axes.plot_line_graph(x_values=m1_axis, y_values=pm1_med(m1_axis), line_color=BLUE, add_vertex_dots=False, stroke_width = 4)
@@ -95,5 +108,21 @@ class FitMassFunction(Scene):
         x_label = self.axes.get_x_axis_label(r"m_1", edge=DOWN, direction=DOWN,buff=10).shift(0.8*UP).shift(0.4*LEFT)
         self.grid_labels = VGroup(x_label, y_label).shift(RIGHT*0.5).shift(DOWN*0.5)
         # self.add(self.plot, self.grid_labels)
-        self.play(Create(median), FadeIn(area), Create(self.axes),  Write(self.grid_labels))
-        self.wait(0.5)
+        self.gaussians = []
+        x_axis = np.arange(0,100,0.1)
+        self.gaussians = self.plot_gaussian(self.axes, self.gaussians, x_axis, 1.4, 7.5, 1.3)
+        self.gaussians = self.plot_gaussian(self.axes, self.gaussians, x_axis, 6.8, 9.8, 1.3)
+        self.gaussians = self.plot_gaussian(self.axes, self.gaussians, x_axis, 0.4, 17, 4)
+        self.gaussians = self.plot_gaussian(self.axes, self.gaussians, x_axis, 0.25, 31, 8)
+        self.gaussians = self.plot_gaussian(self.axes, self.gaussians, x_axis, 0.009, 38, 30)
+
+        self.model = MathTex(r"p(m_1) \propto \sum_i f_i\mathcal{N}(m_1;\mu_i,\sigma_i)",font_size=40).shift(3*RIGHT,2*UP)
+        # self.play(Create(self.axes),  Write(self.grid_labels))
+        # self.wait(0.5)
+        # self.play(Write(self.model))
+        # self.wait(0.5)
+        # self.play(Create(median), FadeIn(area))
+        # self.wait(0.5)
+        # self.play(Create(self.gaussians[0]))
+        
+        self.add(self.axes, self.plot, self.model, median, area, *[self.gaussians[i] for i in range(5)])
