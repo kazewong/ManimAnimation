@@ -1,5 +1,4 @@
 from curses.ascii import CR
-from venv import create
 from manim import *
 from sympy import sympify
 from SRgraph import *
@@ -7,7 +6,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.stats import gaussian_kde
 
-data = np.load('./vamana_m1_spectrum.npz')
+data = np.load('/home/kaze/Work/ManimAnimation/SRexplain/vamana_m1_spectrum.npz')
 m1_axis = data['axis']
 pm1_med = data['pm1_med']
 pm1_med[pm1_med<1e-6] = 1e-6
@@ -19,7 +18,7 @@ pm1_med = interp1d(m1_axis,pm1_med,bounds_error=False,fill_value=1e-12)
 pm1_low = interp1d(m1_axis,pm1_low,bounds_error=False,fill_value=1e-12)
 pm1_high = interp1d(m1_axis,pm1_high,bounds_error=False,fill_value=1e-12)
 
-data = np.load('./GWTC3_LVK_posterior_m1.npz')
+data = np.load('/home/kaze/Work/ManimAnimation/SRexplain/GWTC3_LVK_posterior_m1.npz')
 m1_samples = data['data']
 kde_array = []
 for i in range(len(m1_samples)):
@@ -65,13 +64,23 @@ class SRMain(Scene):
     def construct(self):
         equation1 = sympify('(((x1 * x1) - 2.0) + (cos(x2)))')
         equation2 = sympify('(((x1 * x1) - 2.0) + (cos(x2) * 3.0))')
+        self.tex = MathTex(r"(x_1*x_1) - 2 + \cos(x_2)",font_size=40,
+                    substrings_to_isolate=["(x_1*x_1)","\cos(x_2)"]).shift(3*LEFT)
         G1 = get_graph(equation1)
         G2 = get_graph(equation2)
+        G1_manim = get_manim_graph(G1).shift(2*RIGHT)
         G = get_manim_graph(nx.compose(nx.intersection(G1,G2),G2))
-        self.add(G)
-        # self.play(Write(G1),run_time=2)
-        # self.play(ReplacementTransform(G1, G2), run_time=2)
-        # self.wait(1)
+        # self.add(G)
+        # self.play(Write(get_manim_graph(G1)),run_time=2)
+        self.play(Write(self.tex))
+        # self.play(Write(G1_manim))
+        self.play(Indicate(self.tex.submobjects[0]))
+        print(G1_manim.vertices)
+        # self.play(Indicate(G1_manim.vertices['Pow3']),Indicate(G1_manim.vertices['x15'])
+        #             ,Indicate(G1_manim.vertices['24']))
+        self.play(FadeOut(self.tex,shift=RIGHT),FadeIn(get_manim_graph(G1),shift=RIGHT))
+        # self.play(ReplacementTransform(get_manim_graph(G1), get_manim_graph(G2)), run_time=2)
+        self.wait(1)
 
 
 class FitMassFunction(Scene):
@@ -85,6 +94,6 @@ class FitMassFunction(Scene):
         y_label = self.axes.get_y_axis_label(r"p(m_1)", edge=LEFT, direction=LEFT, buff=1).rotate(PI/2).shift(0.6*LEFT)
         x_label = self.axes.get_x_axis_label(r"m_1", edge=DOWN, direction=DOWN,buff=10).shift(0.8*UP).shift(0.4*LEFT)
         self.grid_labels = VGroup(x_label, y_label).shift(RIGHT*0.5).shift(DOWN*0.5)
-        self.add(self.plot, self.grid_labels)
-        # self.play(Create(self.axes), Create(median), FadeIn(area), Write(self.grid_labels))
-
+        # self.add(self.plot, self.grid_labels)
+        self.play(Create(median), FadeIn(area), Create(self.axes),  Write(self.grid_labels))
+        self.wait(0.5)
