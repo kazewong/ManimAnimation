@@ -65,7 +65,7 @@ class SRMain(Scene):
     def construct(self):
         equation1 = sympify('x1 + 2')
         equation2 = sympify('x1 + 2 * sin(x1)')
-        self.tex1 = MathTex(r"2 + x_1 ",font_size=40,
+        self.tex1 = MathTex(r"x_1 + 2",font_size=40,
                     substrings_to_isolate=["+"]).shift(5.5*LEFT)
         self.tex2 = MathTex(r"x_1 + 2 \sin{x_1}",font_size=40,
                     substrings_to_isolate=["+","\sin{x_1}"]).shift(5.5*LEFT)
@@ -75,8 +75,8 @@ class SRMain(Scene):
         G2_manim = get_manim_graph(G2).shift(2.5*LEFT)
 
         self.axes = Axes(x_range=[0,10], y_range=[0,12],axis_config={"include_tip": True, "include_numbers": True}).scale(0.9)
-        y_label = self.axes.get_y_axis_label(r"p(m_1)", edge=LEFT, direction=LEFT, buff=1).rotate(PI/2).shift(1*LEFT)
-        x_label = self.axes.get_x_axis_label(r"m_1", edge=DOWN, direction=DOWN,buff=10).shift(0.8*UP).shift(0.4*LEFT)
+        y_label = self.axes.get_y_axis_label(r"y", edge=LEFT, direction=LEFT, buff=1).rotate(PI/2).shift(1*LEFT)
+        x_label = self.axes.get_x_axis_label(r"x", edge=DOWN, direction=DOWN,buff=10).shift(0.8*UP).shift(0.4*LEFT)
         self.grid_labels = VGroup(x_label, y_label).shift(RIGHT*0.5).shift(DOWN*0.5)
         x_axis = np.linspace(0,9,100)
         self.function1 = self.axes.plot_line_graph(x_values = x_axis,y_values = lambdify(list(equation1.free_symbols),equation1)(x_axis),stroke_width=3,add_vertex_dots=False,line_color=WHITE).scale(0.5).shift(4*RIGHT)
