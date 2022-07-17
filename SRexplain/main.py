@@ -1,9 +1,10 @@
 from curses.ascii import CR
 from venv import create
 from manim import *
-from sympy import sympify, lambdify
+from sympy import symmetric_poly, sympify, lambdify
 from SRgraph import *
 import numpy as np
+import sympy
 from scipy.interpolate import interp1d
 from scipy.stats import gaussian_kde
 
@@ -78,15 +79,17 @@ def Gaussian(x, A, mu, sigma):
     return A*np.exp(-((x-mu)/sigma)**2)
 class FitMassFunction(Scene):
 
-    def plot_gaussian(self, axes, gaussian_list, x_axis, A, mu, sigma):
-        y = Gaussian(x_axis, A, mu, sigma)
-        y[y<1e-6] = 1e-6
-        line = axes.plot_line_graph(x_values=x_axis,y_values=y,stroke_width=3,add_vertex_dots=False,line_color=GRAY_A)
-        line.set_stroke(opacity=0.7)
-        gaussian_list.append(line)
-        return gaussian_list
-
     def construct(self):
+
+        def plot_gaussian(axes, gaussian_list, x_axis, A, mu, sigma):
+            y = Gaussian(x_axis, A, mu, sigma)
+            y[y<1e-6] = 1e-6
+            line = axes.plot_line_graph(x_values=x_axis,y_values=y,stroke_width=3,add_vertex_dots=False,line_color=GRAY_A)
+            line.set_stroke(opacity=0.7)
+            gaussian_list.append(line)
+            return gaussian_list
+
+
         self.axes2 = Axes(x_range=[0,2.1,1], y_range=[-4,1,1],axis_config={"include_tip": True, "include_numbers": True, "scaling": LogBase(custom_labels=True)},
                         ).scale(0.9)
         self.axes = Axes(x_range=[0,100,10], y_range=[-6,1],axis_config={"include_tip": True, "include_numbers": True},y_axis_config={"scaling": LogBase(10)}).scale(0.9)
@@ -104,11 +107,11 @@ class FitMassFunction(Scene):
         area = self.axes.get_area(graph=low, x_range=[0,100], bounded_graph=high)
         self.gaussians = []
         x_axis = np.arange(0,100,0.1)
-        self.gaussians = self.plot_gaussian(self.axes, self.gaussians, x_axis, 1.4, 7.5, 1.3)
-        self.gaussians = self.plot_gaussian(self.axes, self.gaussians, x_axis, 6.8, 9.8, 1.3)
-        self.gaussians = self.plot_gaussian(self.axes, self.gaussians, x_axis, 0.4, 17, 4)
-        self.gaussians = self.plot_gaussian(self.axes, self.gaussians, x_axis, 0.25, 31, 8)
-        self.gaussians = self.plot_gaussian(self.axes, self.gaussians, x_axis, 0.009, 38, 30)
+        self.gaussians = plot_gaussian(self.axes, self.gaussians, x_axis, 1.4, 7.5, 1.3)
+        self.gaussians = plot_gaussian(self.axes, self.gaussians, x_axis, 6.8, 9.8, 1.3)
+        self.gaussians = plot_gaussian(self.axes, self.gaussians, x_axis, 0.4, 17, 4)
+        self.gaussians = plot_gaussian(self.axes, self.gaussians, x_axis, 0.25, 31, 8)
+        self.gaussians = plot_gaussian(self.axes, self.gaussians, x_axis, 0.009, 38, 30)
 
         self.model = MathTex(r"p(m_1) \propto \sum_i f_i\mathcal{N}(m_1;\mu_i,\sigma_i)",font_size=40).shift(3*RIGHT,2*UP)
         self.wait(0.5)
@@ -158,5 +161,81 @@ class SRMain(Scene):
         self.wait(1)
 
 class FittingGWwithSR(Scene):
+
+
+
     def construct(self):
-        pass
+
+        Gauss =  lambda x: sympy.exp(-(x**2))
+        Cond = lambda x, y: sympy.Piecewise((0, x < 0), (y, True))
+
+        pysr_10 = sympify('3.72*Cond(M-9.27,0.9**M)+3.72*Gauss(0.52*M-4.85)')
+        pysr_15 = sympify('3.89*(Gauss(0.19*M-6.54)+0.45)*Cond(M-9.12,0.91**M)+3.89*Gauss(0.5*M-4.8)')
+        pysr_30 = sympify('(Cond(M-9.42,0.62*0.9**M)+1.44*Gauss(0.51*M-4.88))*(5.11*Gauss(0.06*M-4.67)+7.82*Gauss(0.17*M-5.86)+3.26)')
+
+        self.pysr_equation10 = lambdify(list(pysr_10.free_symbols),pysr_10,modules={"Gauss":Gauss,"Cond":Cond})
+        self.pysr_equation15 = lambdify(list(pysr_15.free_symbols),pysr_15,modules={"Gauss":Gauss,"Cond":Cond})
+        self.pysr_equation30 = lambdify(list(pysr_30.free_symbols),pysr_30,modules={"Gauss":Gauss,"Cond":Cond})
+
+        def plot_gaussian(axes, gaussian_list, x_axis, A, mu, sigma):
+            y = Gaussian(x_axis, A, mu, sigma)
+            y[y<1e-6] = 1e-6
+            line = axes.plot_line_graph(x_values=x_axis,y_values=y,stroke_width=3,add_vertex_dots=False,line_color=GRAY_A)
+            line.set_stroke(opacity=0.7)
+            gaussian_list.append(line)
+            return gaussian_list
+
+
+        self.axes = Axes(x_range=[0,100,10], y_range=[-6,1],axis_config={"include_tip": True, "include_numbers": True},y_axis_config={"scaling": LogBase(10)}).scale(0.9)
+        y_label = self.axes.get_y_axis_label(r"p(m_1)", edge=LEFT, direction=LEFT, buff=1).rotate(PI/2).shift(0.9*LEFT)
+        x_label = self.axes.get_x_axis_label(r"m_1", edge=DOWN, direction=DOWN,buff=10).shift(0.6*UP).shift(0.6*LEFT)
+        self.grid_labels = VGroup(x_label, y_label).shift(RIGHT*0.5).shift(DOWN*0.5)
+        self.add(self.axes, self.grid_labels)
+
+        median = self.axes.plot_line_graph(x_values=m1_axis, y_values=pm1_med(m1_axis), line_color=BLUE, add_vertex_dots=False, stroke_width = 4)
+        low = self.axes.plot(pm1_low,x_range=np.array([1,100,0.1]))
+        high = self.axes.plot(pm1_high,x_range=np.array([1,100,0.1]))
+        area = self.axes.get_area(graph=low, x_range=[0,100], bounded_graph=high)
+        self.gaussians = []
+        x_axis = np.arange(0,100,0.1)
+        self.gaussians = plot_gaussian(self.axes, self.gaussians, x_axis, 1.4, 7.5, 1.3)
+        self.gaussians = plot_gaussian(self.axes, self.gaussians, x_axis, 6.8, 9.8, 1.3)
+        self.gaussians = plot_gaussian(self.axes, self.gaussians, x_axis, 0.4, 17, 4)
+        self.gaussians = plot_gaussian(self.axes, self.gaussians, x_axis, 0.25, 31, 8)
+        self.gaussians = plot_gaussian(self.axes, self.gaussians, x_axis, 0.009, 38, 30)
+
+        self.gaussians = VGroup(*self.gaussians)
+
+
+        y_pysr10 = []
+        y_pysr15 = []
+        y_pysr30 = []
+        for i in x_axis:
+            y_pysr10.append(self.pysr_equation10(i))
+            y_pysr15.append(self.pysr_equation15(i))
+            y_pysr30.append(self.pysr_equation30(i))
+
+        y_pysr10 = np.array(y_pysr10)
+        y_pysr15 = np.array(y_pysr15)
+        y_pysr30 = np.array(y_pysr30)
+
+        y_pysr10[y_pysr10<1e-6] = 1e-6
+        y_pysr15[y_pysr15<1e-6] = 1e-6
+        y_pysr30[y_pysr30<1e-6] = 1e-6
+
+        self.pysr_10 = self.axes.plot_line_graph(x_values=x_axis,y_values=y_pysr10,stroke_width=8,add_vertex_dots=False,line_color=YELLOW)
+        self.pysr_15 = self.axes.plot_line_graph(x_values=x_axis,y_values=y_pysr15,stroke_width=8,add_vertex_dots=False,line_color=YELLOW)
+        self.pysr_30 = self.axes.plot_line_graph(x_values=x_axis,y_values=y_pysr30,stroke_width=8,add_vertex_dots=False,line_color=YELLOW)
+
+
+        self.model = MathTex(r"p(m_1) \propto \sum_i f_i\mathcal{N}(m_1;\mu_i,\sigma_i)",font_size=40).shift(3*RIGHT,2*UP)
+        self.play(FadeIn(self.model),FadeIn(median), FadeIn(area),*[FadeIn(self.gaussians[i]) for i in range(len(self.gaussians))])
+        self.wait(0.5)
+        self.play(Uncreate(self.model),*[Uncreate(self.gaussians[i]) for i in range(len(self.gaussians))])
+        self.wait(0.5)
+        self.play(Create(self.pysr_10))
+        self.wait(0.5)
+        self.play(Transform(self.pysr_10,self.pysr_15))
+        self.wait(0.5)
+        self.play(Transform(self.pysr_10,self.pysr_30))
+        self.wait(0.5)
