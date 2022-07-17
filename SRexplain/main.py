@@ -137,15 +137,19 @@ class SRMain(Scene):
         x_label = self.axes.get_x_axis_label(r"x", edge=DOWN, direction=DOWN,buff=10).shift(0.8*UP).shift(0.4*LEFT)
         self.grid_labels = VGroup(x_label, y_label).shift(RIGHT*0.5).shift(DOWN*0.5)
         x_axis = np.linspace(0,9,100)
+        data_axis = np.linspace(0,9,30)
+        data = lambdify(list(equation2.free_symbols),equation2)(data_axis) + np.random.normal(0,0.6,30)
         self.function1 = self.axes.plot_line_graph(x_values = x_axis,y_values = lambdify(list(equation1.free_symbols),equation1)(x_axis),stroke_width=3,add_vertex_dots=False,line_color=WHITE).scale(0.5).shift(4*RIGHT)
-        self.function2 = self.axes.plot_line_graph(x_values = x_axis,y_values = lambdify(list(equation2.free_symbols),equation2)(x_axis),stroke_width=3,add_vertex_dots=False,line_color=WHITE).scale(0.5).shift(4*RIGHT)
+        self.function2 = self.axes.plot_line_graph(x_values = x_axis,y_values = lambdify(list(equation2.free_symbols),equation2)(x_axis),stroke_width=3,add_vertex_dots=False,line_color=YELLOW).scale(0.5).shift(4*RIGHT)
+        self.data = self.axes.plot_line_graph(x_values = data_axis,y_values = data,stroke_width=0, ).scale(0.5).shift(4*RIGHT)
         self.plot_group = VGroup(self.grid_labels,self.axes).scale(0.5).shift(4*RIGHT)
 
 
         self.play(Write(self.tex1),run_time=0.5)
         # self.play(Write(G1_manim))
         self.play(FadeIn(G1_manim,shift=RIGHT))
-        self.play(Create(self.plot_group),Create(self.function1))
+        self.play(Create(self.plot_group),Create(self.data))
+        self.play(Create(self.function1))
         self.play(Indicate(self.tex1.submobjects[1])
                     ,Indicate(G1_manim.vertices['Add1']))
         self.play(Transform(self.function1,self.function2),ReplacementTransform(G1_manim,G2_manim),Transform(self.tex1,self.tex2))
@@ -153,3 +157,6 @@ class SRMain(Scene):
         # self.play(ReplacementTransform(get_manim_graph(G1), get_manim_graph(G2)), run_time=2)
         self.wait(1)
 
+class FittingGWwithSR(Scene):
+    def construct(self):
+        pass
