@@ -1,3 +1,4 @@
+from asyncio import WriteTransport
 from curses.ascii import CR
 from venv import create
 from manim import *
@@ -5,6 +6,7 @@ from sympy import symmetric_poly, sympify, lambdify
 from SRgraph import *
 import numpy as np
 import sympy
+from sympy import preorder_traversal, Float 
 from scipy.interpolate import interp1d
 from scipy.stats import gaussian_kde
 
@@ -162,20 +164,40 @@ class SRMain(Scene):
 
 class FittingGWwithSR(Scene):
 
-
+    def round_expression(self, ex1):
+        ex2 = ex1
+        for a in preorder_traversal(ex1):
+            if isinstance(a, Float):
+                ex2 = ex2.subs(a, round(a, 2))
+        return ex2
 
     def construct(self):
 
         Gauss =  lambda x: sympy.exp(-(x**2))
         Cond = lambda x, y: sympy.Piecewise((0, x < 0), (y, True))
 
-        pysr_10 = sympify('3.72*Cond(M-9.27,0.9**M)+3.72*Gauss(0.52*M-4.85)')
-        pysr_15 = sympify('3.89*(Gauss(0.19*M-6.54)+0.45)*Cond(M-9.12,0.91**M)+3.89*Gauss(0.5*M-4.8)')
+        pysr_10 = sympify('3.72*(Cond(M-9.27,0.9**M)+Gauss(0.52*M-4.85))')
+        pysr_15 = sympify('3.89*((Gauss(0.19*M-6.54)+0.45)*Cond(M-9.12,0.91**M)+Gauss(0.5*M-4.8))')
         pysr_30 = sympify('(Cond(M-9.42,0.62*0.9**M)+1.44*Gauss(0.51*M-4.88))*(5.11*Gauss(0.06*M-4.67)+7.82*Gauss(0.17*M-5.86)+3.26)')
 
         self.pysr_equation10 = lambdify(list(pysr_10.free_symbols),pysr_10,modules={"Gauss":Gauss,"Cond":Cond})
         self.pysr_equation15 = lambdify(list(pysr_15.free_symbols),pysr_15,modules={"Gauss":Gauss,"Cond":Cond})
         self.pysr_equation30 = lambdify(list(pysr_30.free_symbols),pysr_30,modules={"Gauss":Gauss,"Cond":Cond})
+
+        label1 = sympy.latex(self.round_expression(pysr_10))
+        label1 = label1.replace('operatorname','rm')
+        label1 = label1.replace('&','\&')
+        self.label1 = MathTex(label1).shift(3*UP).scale(0.5)
+
+        label2 = sympy.latex(self.round_expression(pysr_15))
+        label2 = label2.replace('operatorname','rm')
+        label2 = label2.replace('&','\&')
+        self.label2 = MathTex(label2).shift(3*UP).scale(0.5)
+
+        label3 = sympy.latex(self.round_expression(pysr_30))
+        label3 = label3.replace('operatorname','rm')
+        label3 = label3.replace('&','\&')
+        self.label3 = MathTex(label3).shift(3*UP).scale(0.5)
 
         def plot_gaussian(axes, gaussian_list, x_axis, A, mu, sigma):
             y = Gaussian(x_axis, A, mu, sigma)
@@ -233,9 +255,9 @@ class FittingGWwithSR(Scene):
         self.wait(0.5)
         self.play(Uncreate(self.model),*[Uncreate(self.gaussians[i]) for i in range(len(self.gaussians))])
         self.wait(0.5)
-        self.play(Create(self.pysr_10))
+        self.play(Create(self.pysr_10), Write(self.label1))
         self.wait(0.5)
-        self.play(Transform(self.pysr_10,self.pysr_15))
+        self.play(Transform(self.pysr_10,self.pysr_15), Transform(self.label1,self.label2))
         self.wait(0.5)
-        self.play(Transform(self.pysr_10,self.pysr_30))
+        self.play(Transform(self.pysr_10,self.pysr_30), Transform(self.label1,self.label3))
         self.wait(0.5)
