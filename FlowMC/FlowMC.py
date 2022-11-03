@@ -53,5 +53,9 @@ class TargetDistribution(Scene):
         for i in range(len(level_set)):
             graphs.append(self.add_graph(level_set[i]))
             graphs[-1].set_opacity(0.2+0.2*i)
-        group = VGroup(*graphs)
+            graphs[-1].set_stroke(width=0.)
         self.play(AnimationGroup(*[FadeIn(graph) for graph in graphs], lag_ratio=0.5))
+
+        walker = Dot(np.array([1.0,1.0,0]))
+        self.play(FadeIn(walker))
+        self.play(walker.animate().move_to(np.array([1.3,1.0,0])))
