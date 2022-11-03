@@ -31,7 +31,7 @@ def dualmoon(x):
     Term 2 and 3 separate the distribution and smear it along the first and second dimension
     """
     term1 = 0.5 * ((np.linalg.norm(x) - 2) / 0.1) ** 2
-    term2 = -0.5 * ((x[:1] - np.array([-5.0,5.0])) / 0.8) ** 2
+    term2 = -0.5 * ((x[:1] - np.array([-4.0,5.0])) / 0.8) ** 2
     return -(term1 - logsumexp(term2))
 
 # dualmoon = jax.jit(dualmoon)
@@ -49,7 +49,7 @@ class TargetDistribution(Scene):
 
     def construct(self):
         graphs = []
-        level_set = [20, 15, 10, 5]
+        level_set = [15, 10, 5, 0]
         for i in range(len(level_set)):
             graphs.append(self.add_graph(level_set[i]))
             graphs[-1].set_opacity(0.2+0.2*i)
