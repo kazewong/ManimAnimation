@@ -1,4 +1,7 @@
 from manim import *
+import jax.numpy as jnp
+import jax
+from jax.scipy.special import logsumexp
 
 class MonteCarloIntro(Scene):
     def construct(self):
@@ -19,3 +22,36 @@ class Autodiff(Scene):
 class Vmap(Scene):
     def construct(self):
         return super().construct()
+
+####################
+# Show target TargetDistribution
+####################
+
+def dualmoon(x):
+    """
+    Term 2 and 3 separate the distribution and smear it along the first and second dimension
+    """
+    term1 = 0.5 * ((jnp.linalg.norm(x) - 2) / 0.1) ** 2
+    term2 = -0.5 * ((x[:1] - jnp.array([-5.0,5.0])) / 0.8) ** 2
+    return -(term1 - logsumexp(term2))
+
+dualmoon = jax.jit(dualmoon)
+
+class TargetDistribution(Scene):
+
+    def add_graph(self, level):
+        graph = ImplicitFunction(
+            lambda x, y: dualmoon(jnp.array([x, y]))+level,
+            color=YELLOW,
+            y_range=[-3,3],
+            x_range=[-3,3],
+        )
+        return graph
+
+    def construct(self):
+        graphs = []
+        level_set = [20, 15, 10, 5]
+        for i in range(len(level_set)):
+            graphs.append(self.add_graph(level_set[i]))
+            graphs[-1].set_opacity(0.1+0.2*i)
+        self.add(*graphs)
