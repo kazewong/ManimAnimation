@@ -37,6 +37,8 @@ def dualmoon(x):
 
 # dualmoon = jax.jit(dualmoon)
 
+data_global = np.load('./dualmoon_data_global.npz')
+data_local = np.load('./dualmoon_data_local.npz')
 class TargetDistribution(Scene):
 
     def add_graph(self, level):

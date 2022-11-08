@@ -5,6 +5,7 @@ import jax.numpy as jnp
 from jax.scipy.special import logsumexp
 from flowMC.sampler.Sampler import Sampler
 from flowMC.nfmodel.rqSpline import RQSpline
+import numpy as np
 
 def dualmoon(x):
     """
@@ -56,4 +57,28 @@ nf_sampler.sample(initial_position)
 
 prod = nf_sampler.get_sampler_state(training=False)
 chains = prod['chains']
-local
+np.savez('./dualmoon_data_global', chains = chains)
+
+
+nf_sampler = Sampler(
+    n_dim,
+    rng_key_set,
+    local_sampler_caller,
+    {'dt':1e-2},
+    dualmoon,
+    model   ,
+    n_loop_training=n_loop_training,
+    n_loop_production=n_loop_production,
+    n_local_steps=n_local_steps,
+    n_global_steps=n_global_steps,
+    n_chains=n_chains,
+    n_epochs=num_epochs,
+    learning_rate=learning_rate,
+    use_global=False,
+)
+
+nf_sampler.sample(initial_position)
+
+prod = nf_sampler.get_sampler_state(training=False)
+chains = prod['chains']
+np.savez('./dualmoon_data_local', chains = chains)
