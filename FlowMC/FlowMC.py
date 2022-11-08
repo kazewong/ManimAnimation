@@ -2,6 +2,7 @@ from manim import *
 import numpy as np
 from scipy.special import logsumexp
 
+
 class MonteCarloIntro(Scene):
     def construct(self):
         return super().construct()
