@@ -1,27 +1,7 @@
 from manim import *
 import numpy as np
 from scipy.special import logsumexp
-
-
-class MonteCarloIntro(Scene):
-    def construct(self):
-        return super().construct()
-
-class HMCDiffuculty(Scene):
-    def construct(self):
-        return super().construct()
-
-class FlowMCIdea(Scene):
-    def construct(self):
-        return super().construct()
-
-class Autodiff(Scene):
-    def construct(self):
-        return super().construct()
-
-class Vmap(Scene):
-    def construct(self):
-        return super().construct()
+from scipy.stats import gaussian_kde
 
 ####################
 # Show target TargetDistribution
@@ -39,6 +19,10 @@ def dualmoon(x):
 
 data_global = np.load('./dualmoon_data_global.npz')
 data_local = np.load('./dualmoon_data_local.npz')
+local_size = data_local['chains'].shape[1]
+global_size = data_global['chains'].shape[1]
+n_loop = 20
+chain_number = 5
 class TargetDistribution(Scene):
 
     def add_graph(self, level):
@@ -59,6 +43,87 @@ class TargetDistribution(Scene):
             graphs[-1].set_stroke(width=0.)
         self.play(AnimationGroup(*[FadeIn(graph) for graph in graphs], lag_ratio=0.5))
 
-        walker = Dot(np.array([1.0,1.0,0]))
+class NormalMCMC(Scene):
+
+    def add_graph(self, level):
+        graph = ImplicitFunction(
+            lambda x, y: dualmoon(np.array([x, y]))+level,
+            color=BLUE,
+            y_range=[-3,3],
+            x_range=[-3,3],
+        )
+        return graph
+
+    def construct(self):
+        graphs = []
+        level_set = [15, 10, 5, 0]
+        for i in range(len(level_set)):
+            graphs.append(self.add_graph(level_set[i]))
+            graphs[-1].set_opacity(0.2+0.2*i)
+            graphs[-1].set_stroke(width=0.)
+        self.play(AnimationGroup(*[FadeIn(graph) for graph in graphs], lag_ratio=0.5))
+
+        # walker = Dot(np.array([data_local['chains'][chain_number,i,0], data_local['chains'][chain_number,i,1], 0]))
+        walker = Dot(np.array([data_global['chains'][chain_number,i,0], data_global['chains'][chain_number,i,1], 0]))
         self.play(FadeIn(walker))
-        self.play(walker.animate().move_to(np.array([1.3,1.0,0])))
+        for i in range(1,n_loop):
+            # self.play(walker.animate.move_to(np.array([data_local['chains'][chain_number,::int(local_size/n_loop),0][i], data_local['chains'][chain_number,::int(local_size/n_loop),1][i], 0])))
+            self.play(walker.animate.move_to(np.array([data_global['chains'][chain_number,::int(global_size/n_loop),0][i], data_global['chains'][chain_number,::int(global_size/n_loop),1][i], 0])))
+
+nf_data = np.load("./dualmoon_nf_samples.npz",allow_pickle=True)['nf_samples_array']
+class BuildingFlow(Scene):
+
+    def add_graph(self, level, data):
+        kde = gaussian_kde(data.T)
+        graph = ImplicitFunction(
+            lambda x, y: np.log(kde(np.array([x,y])))+level,
+            color=GREEN,
+            y_range=[-3,3],
+            x_range=[-3,3],
+        )
+        return graph
+
+    def construct(self):
+        graphs = []
+        level_set = [5, 3, 1, -1]
+        for i in range(len(level_set)):
+            graphs.append(self.add_graph(level_set[i],nf_data[0]))
+            graphs[-1].set_opacity(0.2+0.2*i)
+            graphs[-1].set_stroke(width=0.)
+        self.play(AnimationGroup(*[FadeIn(graph) for graph in graphs], lag_ratio=0.5))
+        for j in range(10):
+            level_set = [7, 5, 3, 1]
+            new_graphs = []
+            for i in range(len(level_set)):
+                new_graphs.append(self.add_graph(level_set[i],nf_data[1+2*j]))
+                new_graphs[-1].set_opacity(0.2+0.2*i)
+                new_graphs[-1].set_stroke(width=0.)
+            self.play(AnimationGroup(*[Transform(graphs[i],new_graphs[i]) for i in range(3)]))
+
+
+class FlowMC(Scene):
+
+    def add_graph(self, level):
+        graph = ImplicitFunction(
+            lambda x, y: dualmoon(np.array([x, y]))+level,
+            color=BLUE,
+            y_range=[-3,3],
+            x_range=[-3,3],
+        )
+        return graph
+
+    def construct(self):
+        graphs = []
+        level_set = [15, 10, 5, 0]
+        for i in range(len(level_set)):
+            graphs.append(self.add_graph(level_set[i]))
+            graphs[-1].set_opacity(0.2+0.2*i)
+            graphs[-1].set_stroke(width=0.)
+        self.play(AnimationGroup(*[FadeIn(graph) for graph in graphs], lag_ratio=0.5))
+
+        # walker = Dot(np.array([data_local['chains'][chain_number,i,0], data_local['chains'][chain_number,i,1], 0]))
+        walker = Dot(np.array([data_global['chains'][chain_number,i,0], data_global['chains'][chain_number,i,1], 0]))
+        self.play(FadeIn(walker))
+        for i in range(1,n_loop):
+            # self.play(walker.animate.move_to(np.array([data_local['chains'][chain_number,::int(local_size/n_loop),0][i], data_local['chains'][chain_number,::int(local_size/n_loop),1][i], 0])))
+            self.play(walker.animate.move_to(np.array([data_global['chains'][chain_number,::int(global_size/n_loop),0][i], data_global['chains'][chain_number,::int(global_size/n_loop),1][i], 0])))
