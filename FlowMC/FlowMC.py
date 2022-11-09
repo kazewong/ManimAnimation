@@ -44,8 +44,26 @@ class NormalMCMC(Scene):
             graphs[-1].set_stroke(width=0.)
         self.play(AnimationGroup(*[FadeIn(graph) for graph in graphs], lag_ratio=0.5))
 
-        walker = Dot(np.array([data_local['chains'][chain_number,i,0], data_local['chains'][chain_number,i,1], 0]))
+        init_pos = np.array([data_local['chains'][chain_number,i,0], data_local['chains'][chain_number,i,1], 0])
+        walker = Dot(init_pos)
+        proposal_Gaussian_inner = Circle(color=GREEN, radius=0.6, fill_opacity=0.4, stroke_width=0).move_to(init_pos)
+        proposal_Gaussian_outer = Circle(color=GREEN, radius=1.0, fill_opacity=0.2, stroke_width=0).move_to(init_pos)
+        arrow = Arrow(init_pos, init_pos+0.2, color=YELLOW, stroke_width=0.5)
+
+
         self.play(FadeIn(walker))
+        self.wait(0.5)
+        self.play(FadeIn(proposal_Gaussian_inner), FadeIn(proposal_Gaussian_outer))
+        self.wait(0.5)
+
+        self.play(GrowArrow(arrow))
+        self.wait(0.5)
+        self.play(Transform(arrow, Arrow(init_pos, init_pos, color=YELLOW, stroke_width=0.5)))
+        self.wait(0.5)
+
+        self.play(FadeOut(proposal_Gaussian_inner), FadeOut(proposal_Gaussian_outer))
+        self.wait(0.5)
+
         for i in range(1,n_loop):
             self.play(walker.animate.move_to(np.array([data_local['chains'][chain_number,::int(local_size/n_loop),0][i], data_local['chains'][chain_number,::int(local_size/n_loop),1][i], 0])))
 
@@ -71,7 +89,7 @@ class BuildingFlow(Scene):
             graphs[-1].set_stroke(width=0.)
         self.play(AnimationGroup(*[FadeIn(graph) for graph in graphs], lag_ratio=0.5))
         for j in range(10):
-            level_set = [7, 5, 3, 1]
+            level_set = [8, 6, 4, 2]
             new_graphs = []
             for i in range(len(level_set)):
                 new_graphs.append(self.add_graph(level_set[i],nf_data[1+2*j]))
