@@ -97,14 +97,23 @@ class BuildingFlow(Scene):
             graphs.append(self.add_graph(level_set[i],nf_data[0]))
             graphs[-1].set_opacity(0.2+0.2*i)
             graphs[-1].set_stroke(width=0.)
+        text = Text("Training normalizing flow", color=WHITE).shift(UP*3.5)
+        self.play(Write(text))
         self.play(AnimationGroup(*[FadeIn(graph) for graph in graphs], lag_ratio=0.5))
+
+
+
+        dot_set = Group(*[Dot(np.array([nf_data[0][::100][i][0],nf_data[0][::100][i][1],0]),radius=0.1).set_z_index(10) for i in range(10)])
+        self.play(FadeIn(dot_set,radius=0.1))
         for j in range(10):
-            level_set = [8, 6, 4, 2]
+            dot_set_new = Group(*[Dot(np.array([nf_data[1+2*j][::100][i][0],nf_data[1+2*j][::100][i][1],0]),radius=0.1).set_z_index(10) for i in range(10)])
+            level_set = [7, 5, 3, 1]
             new_graphs = []
             for i in range(len(level_set)):
                 new_graphs.append(self.add_graph(level_set[i],nf_data[1+2*j]))
                 new_graphs[-1].set_opacity(0.2+0.2*i)
                 new_graphs[-1].set_stroke(width=0.)
+            self.play(FadeIn(dot_set_new))
             self.play(AnimationGroup(*[Transform(graphs[i],new_graphs[i]) for i in range(3)]))
 
 
@@ -119,6 +128,16 @@ class FlowMC(Scene):
         )
         return graph
 
+    def add_NF(self, level, data):
+        kde = gaussian_kde(data.T)
+        graph = ImplicitFunction(
+            lambda x, y: np.log(kde(np.array([x,y])))+level,
+            color=GREEN,
+            y_range=[-3,3],
+            x_range=[-3,3],
+        )
+        return graph
+
     def construct(self):
         chain_number = 5
         graphs = []
@@ -127,7 +146,17 @@ class FlowMC(Scene):
             graphs.append(self.add_graph(level_set[i]))
             graphs[-1].set_opacity(0.2+0.2*i)
             graphs[-1].set_stroke(width=0.)
+        text = Text("flowMC", color=WHITE).shift(UP*3.5)
+        self.play(Write(text))
         self.play(AnimationGroup(*[FadeIn(graph) for graph in graphs], lag_ratio=0.5))
+
+        NF_graphs = []
+        level_set = [5, 3, 1, -1]
+        for i in range(len(level_set)):
+            NF_graphs.append(self.add_NF(level_set[i],nf_data[19]))
+            NF_graphs[-1].set_opacity(0.2+0.2*i)
+            NF_graphs[-1].set_stroke(width=0.)
+        self.play(AnimationGroup(*[FadeIn(graph) for graph in NF_graphs]))
 
         chain = data_global['chains'][chain_number]
         steps_index = np.random.choice(np.where(chain[:,0]>0)[0],size=int(n_loop/4))
