@@ -48,6 +48,10 @@ class OneInsertion(Scene):
         initial_simplex = Simplex(vertices[:3])
         self.add(initial_simplex)
 
+        new_vertex = Dot(np.array([vertices[6][0], vertices[6][1], 0]))
+        line_group = VGroup()
+        
+
 
 
 class ConstructDelanuayTriangulation(Scene):
