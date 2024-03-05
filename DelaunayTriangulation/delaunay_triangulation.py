@@ -6,6 +6,7 @@ import numpy as np
 def read_data(filename: str):
     data = np.load(filename)
     simplices = dict()
+    vertices = data['vertices']
     centroid = np.mean(vertices[:,:3], axis=1)
     for i in range(len(data['keys'])):
         simplices[data['keys'][i]] = [data['values'][:, i], data['radii'][i], data['centers'][:,i]-centroid]
@@ -22,9 +23,16 @@ simplices, vertices = read_data('/home/kaze/Work/Presentation/ManimAnimation/Del
 
 class InitialConstruction(Scene):
     def construct(self):
-        pass
-
-
+        dot_group = VGroup()
+        for vertex in vertices[:3]:
+            dot_group.add(Dot(np.array([vertex[0], vertex[1], 0])*2))
+        animation_group = AnimationGroup(*[Create(Dot(np.array([vertex[0], vertex[1], 0])*2)) for vertex in vertices[:3]])
+        self.play(animation_group)
+        line_group = VGroup()
+        for i in range(3):
+            line_group.add(Line(dot_group[i].get_center(), dot_group[(i+1)%3].get_center()))
+        animation_group = AnimationGroup(*[Create(line) for line in line_group])
+        self.play(animation_group)
 class ConstructDelanuayTriangulation(Scene):
     def construct(self):
         #Insert vertices
@@ -35,3 +43,7 @@ class ConstructDelanuayTriangulation(Scene):
         #     x, y = plot_simplex_2d(simplex[0], vertices)
         #     self.play(Create(Polygon(*[np.array([x[i], y[i], 0]) for i in range(3)])))
         # self.wait(2)
+            
+class DelaunayToVoronoi(Scene):
+    def construct(self):
+        pass
