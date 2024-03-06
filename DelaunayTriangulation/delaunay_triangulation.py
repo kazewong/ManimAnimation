@@ -74,8 +74,10 @@ class Simplex(VGroup):
 class OneInsertion(Scene):
     def construct(self):
         simplex = Simplex(vertices[0][:3])
+        circumcircle = Circle.from_three_points(*[np.array([vertices[0][i][0], vertices[0][i][1], 0])*2 for i in range(3)]).set_color(WHITE)
 
         new_vertex = Dot(np.array([vertices[0][6][0], vertices[0][6][1], 0])*2, z_index=100)
+        
 
         new_simplex_group = VGroup()
         simplex_with_vertex = list(filter(lambda simplex: 7 in simplex[0], simplices[0].values()))
@@ -84,9 +86,11 @@ class OneInsertion(Scene):
             new_simplex_group.add(Simplex(vertices[0][simplex_with_vertex[i][0]-1], dot_color=color_list[i], line_color=color_list[i]))
 
         self.play(Create(simplex))
-        self.play(Create(new_vertex))        
-        # self.play(Create(new_simplex_group[0],line=False))
-        self.play(Indicate(simplex, scale_factor=1, color=RED))
+        self.play(Create(new_vertex))
+        self.play(Create(circumcircle))
+        animation_group = AnimationGroup(*[Indicate(simplex, scale_factor=1, color=RED), Indicate(circumcircle, scale_factor=1, color=RED)])
+        self.play(animation_group)
+        self.play(Uncreate(circumcircle))
         animation_group = AnimationGroup(*[Create(simplex,dot=False) for simplex in new_simplex_group])
         self.play(animation_group)
         
