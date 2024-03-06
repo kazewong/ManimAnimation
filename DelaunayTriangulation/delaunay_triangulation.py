@@ -70,15 +70,10 @@ class Simplex(VGroup):
     def _indicate(self, **kwargs):
         return Indicate(self.dot_group, **kwargs)
 
-class InitialConstruction(Scene):
-    def construct(self):
-        simplex = Simplex(vertices[0][:3])
-        self.play(Create(simplex))
 
 class OneInsertion(Scene):
     def construct(self):
         simplex = Simplex(vertices[0][:3])
-        self.add(simplex)
 
         new_vertex = Dot(np.array([vertices[0][6][0], vertices[0][6][1], 0])*2, z_index=100)
 
@@ -88,6 +83,7 @@ class OneInsertion(Scene):
         for i in range(3):
             new_simplex_group.add(Simplex(vertices[0][simplex_with_vertex[i][0]-1], dot_color=color_list[i], line_color=color_list[i]))
 
+        self.play(Create(simplex))
         self.play(Create(new_vertex))        
         # self.play(Create(new_simplex_group[0],line=False))
         self.play(Indicate(simplex, scale_factor=1, color=RED))
