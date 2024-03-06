@@ -19,7 +19,13 @@ def plot_simplex_2d(simplex: dict[int, np.array], vertices: list[float]):
         y.append(vertices[simplex[vertex_id]-1][1])
     return x, y
 
-simplices, vertices = read_data('/home/kaze/Work/Presentation/ManimAnimation/DelaunayTriangulation/tree.npz')
+simplices = []
+vertices = []
+_simplices, _vertices = read_data('./data/tree.npz')
+for i in range(3, 20):
+    _simplices, _vertices = read_data('./data/tree_{}.npz'.format(str(i).zfill(4)))
+    simplices.append(_simplices)
+    vertices.append(_vertices)
 
 class Simplex(VGroup):
     def __init__(self, vertices, **kwargs):
@@ -40,20 +46,18 @@ class Simplex(VGroup):
 
 class InitialConstruction(Scene):
     def construct(self):
-        simplex = Simplex(vertices[:3])
+        simplex = Simplex(vertices[0][:3])
         self.play(Create(simplex))
 
 class OneInsertion(Scene):
     def construct(self):
-        initial_simplex = Simplex(vertices[:3])
+        
+        initial_simplex = Simplex(vertices[1][:3])
         self.add(initial_simplex)
 
-        new_vertex = Dot(np.array([vertices[6][0], vertices[6][1], 0]))
+        new_vertex = Dot(np.array([vertices[1][6][0], vertices[1][6][1], 0]))
         line_group = VGroup()
         
-
-
-
 class ConstructDelanuayTriangulation(Scene):
     def construct(self):
         #Insert vertices
